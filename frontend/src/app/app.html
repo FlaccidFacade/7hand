@@ -202,8 +202,8 @@
             cx="0"
             cy="0"
             r="1"
-            gradientTransform="rotate(118.122 171.182 60.81) scale(205.794)"
-            gradientUnits="userSpaceOnUse"
+            gradient-transform="rotate(118.122 171.182 60.81) scale(205.794)"
+            gradient-units="userSpaceOnUse"
           >
             <stop stop-color="#FF41F8" />
             <stop offset=".707" stop-color="#FF41F8" stop-opacity=".5" />
@@ -215,7 +215,7 @@
             x2="982"
             y1="192"
             y2="192"
-            gradientUnits="userSpaceOnUse"
+            gradient-units="userSpaceOnUse"
           >
             <stop stop-color="#F0060B" />
             <stop offset="0" stop-color="#F0070C" />
@@ -321,6 +321,16 @@
         </a>
       </div>
     </div>
+  </div>
+
+  <div style="margin: 1em 0; padding: 1em; border: 1px solid #ccc; border-radius: 8px; max-width: 500px;">
+    <h3>API & DB Health</h3>
+    <ng-container *ngIf="health$ | async as health; else loading">
+      <div>API: <b [style.color]="health.api === 'up' ? 'green' : 'red'">{{ health.api }}</b> (v{{ health.apiVersion }})</div>
+      <div>DB: <b [style.color]="health.db === 'up' ? 'green' : 'red'">{{ health.db }}</b></div>
+      <div *ngIf="health.dbVersion">DB Version: <code>{{ health.dbVersion }}</code></div>
+    </ng-container>
+    <ng-template #loading>Loading health status...</ng-template>
   </div>
 </main>
 

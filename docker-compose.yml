@@ -1,21 +1,18 @@
-version: '3.8'
 services:
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      target: prod
     ports:
-      - "4200:4200"
-    volumes:
-      - ./frontend:/app
+      - "80:80"
     depends_on:
       - backend
-    environment:
-      - CHOKIDAR_USEPOLLING=true
   backend:
     build: ./backend
     ports:
       - "3000:3000"
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
       - DB_HOST=db
       - DB_PORT=5432
       - DB_USER=cardgame
@@ -34,20 +31,6 @@ services:
       - "5432:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
-  selenium:
-    image: selenium/standalone-chrome:124.0
-    ports:
-      - "4444:4444"
-    shm_size: 2g
-  test-runner:
-    build: ./selenium
-    depends_on:
-      - frontend
-      - selenium
-    environment:
-      - SELENIUM_REMOTE_URL=http://selenium:4444/wd/hub
-      - FRONTEND_URL=http://frontend:4200
-    entrypoint: ["npm", "test"]
 
 volumes:
   db-data:
