@@ -1,0 +1,11 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "shell",
+			"label": "rebuild-backend-no-cache",
+			"command": "dc build --no-cache backend",
+			"group": "build"
+		}
+	]
+}

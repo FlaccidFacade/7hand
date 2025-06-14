@@ -18,5 +18,12 @@
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal"
     }
+  ],
+  "compounds": [
+    {
+      "name": "Rebuild Backend Without Cache",
+      "configurations": [],
+      "preLaunchTask": "rebuild-backend-no-cache"
+    }
   ]
 }
