@@ -1,20 +1,16 @@
 {
   "version": "0.2.0",
   "configurations": [
+ 
     {
       "type": "node",
       "request": "launch",
-      "name": "Run Selenium Test",
-      "program": "${workspaceFolder}/selenium/test.js",
-      "cwd": "${workspaceFolder}/selenium",
-      "console": "integratedTerminal",
-      "runtimeExecutable": "node"
-    },
-    {
-      "type": "pwa-shell",
-      "request": "launch",
       "name": "Run Selenium Test with dc",
-      "command": "dc up --build --exit-code-from test-runner",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "dc up --build --exit-code-from test-runner"
+      ],
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal"
     }

@@ -14,10 +14,26 @@ services:
     build: ./backend
     ports:
       - "3000:3000"
-    volumes:
-      - ./backend:/app
     environment:
       - NODE_ENV=development
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=cardgame
+      - DB_PASSWORD=cardgamepass
+      - DB_NAME=cardgamedb
+    depends_on:
+      - db
+  db:
+    image: postgres:16
+    restart: always
+    environment:
+      POSTGRES_USER: cardgame
+      POSTGRES_PASSWORD: cardgamepass
+      POSTGRES_DB: cardgamedb
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
   selenium:
     image: selenium/standalone-chrome:124.0
     ports:
@@ -32,3 +48,6 @@ services:
       - SELENIUM_REMOTE_URL=http://selenium:4444/wd/hub
       - FRONTEND_URL=http://frontend:4200
     entrypoint: ["npm", "test"]
+
+volumes:
+  db-data:
