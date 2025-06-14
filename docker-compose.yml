@@ -18,6 +18,7 @@ services:
       - DB_USER=cardgame
       - DB_PASSWORD=cardgamepass
       - DB_NAME=cardgamedb
+      - DATABASE_URL=postgres://cardgame:cardgamepass@db:5432/cardgamedb
     depends_on:
       - db
   db:
