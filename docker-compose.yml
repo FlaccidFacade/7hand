@@ -18,3 +18,17 @@ services:
       - ./backend:/app
     environment:
       - NODE_ENV=development
+  selenium:
+    image: selenium/standalone-chrome:124.0
+    ports:
+      - "4444:4444"
+    shm_size: 2g
+  test-runner:
+    build: ./selenium
+    depends_on:
+      - frontend
+      - selenium
+    environment:
+      - SELENIUM_REMOTE_URL=http://selenium:4444/wd/hub
+      - FRONTEND_URL=http://frontend:4200
+    entrypoint: ["npm", "test"]
