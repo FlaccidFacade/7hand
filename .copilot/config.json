@@ -1,0 +1,9 @@
+{
+  "projectContext": "full",
+  "maxFiles": 100,
+  "maxFileSize": 1000000,
+  "exclude": ["node_modules/", "dist/", "build/", "*.log"],
+  "languagePreferences": {
+  "typescript": { "strict": true }
+  }
+}
