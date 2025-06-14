@@ -1,0 +1,13 @@
+{
+    "recommendations": [
+        "ryanluker.vscode-coverage-gutters",
+        "streetsidesoftware.code-spell-checker",
+        "github.vscode-github-actions",
+        "github.copilot",
+        "visualstudioexptteam.vscodeintellicode",
+        "davidanson.vscode-markdownlint",
+        "esbenp.prettier-vscode",
+        "sonarsource.sonarlint-vscode",
+        "mattpocock.ts-error-translator"
+    ]
+}
