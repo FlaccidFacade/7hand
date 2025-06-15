@@ -1,0 +1,42 @@
+.header-bar {
+  width: 100vw;
+  background: #222c1a;
+  color: #fff;
+  padding: 0.75rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  font-size: 1.5rem;
+  font-family: 'Inter Tight', Inter, sans-serif;
+  letter-spacing: 0.1em;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.header-title {
+  font-weight: bold;
+  font-size: 2rem;
+  letter-spacing: 0.15em;
+  color: #ffe066;
+  text-shadow: 0 2px 8px #000a;
+}
+
+.health-status {
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  white-space: nowrap;
+  overflow-x: auto;
+  max-width: 100vw;
+}
+
+.health-dot {
+  width: 0.75em;
+  height: 0.75em;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 0.5em;
+}

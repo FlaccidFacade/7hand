@@ -1,0 +1,16 @@
+<div class="header-bar">
+  <span class="header-title">7-hand</span>
+  <div class="health-status">
+    @if (health$ | async; as health; else loading) {
+      <span>
+        <span class="health-dot" [style.background]="health.api === 'up' ? '#4caf50' : '#f44336'"></span>
+        API: <b [style.color]="health.api === 'up' ? '#4caf50' : '#f44336'">{{ health.api }}</b>
+      </span>
+      <span>
+        <span class="health-dot" [style.background]="health.db === 'up' ? '#4caf50' : '#f44336'"></span>
+        DB: <b [style.color]="health.db === 'up' ? '#4caf50' : '#f44336'">{{ health.db }}</b>
+      </span>
+    }
+    <ng-template #loading>Loading health...</ng-template>
+  </div>
+</div>
