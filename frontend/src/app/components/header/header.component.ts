@@ -1,10 +1,9 @@
 import { Component, Input } from '@angular/core';
-import { AsyncPipe } from '@angular/common';
 
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [AsyncPipe],
+  imports: [],
   templateUrl: './header.component.html',
   styleUrl: './header.component.css'
 })
