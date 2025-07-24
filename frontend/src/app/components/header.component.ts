@@ -5,8 +5,8 @@ import { AsyncPipe } from '@angular/common';
   selector: 'app-header',
   standalone: true,
   imports: [AsyncPipe],
-  templateUrl: './components/header.component.html',
-  styleUrl: './components/header.component.css'
+  templateUrl: './header.component.html',
+  styleUrl: './header.component.css'
 })
 export class HeaderComponent {
   @Input() health$: any;
