@@ -1,0 +1,23 @@
+name: Label Dependabot PRs
+permissions:
+  contents: read
+  pull-requests: write
+
+on:
+  pull_request_target:
+    types: [opened]
+
+jobs:
+  label:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Label Dependabot PRs
+        uses: actions/labeler@v3
+        with:
+          # GitHub automatically provides the GITHUB_TOKEN secret to every
+          # workflow run. It is available by default and is used for
+          # authentication with the GitHub API (for actions like merging
+          # PRs, pushing code, etc.). You can reference it as 
+          # secrets.GITHUB_TOKEN  in your workflows without any manual setup.
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
