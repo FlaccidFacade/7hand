@@ -22,11 +22,11 @@ jobs:
         ports:
           - 5432:5432
         options:
-          --health-cmd "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"
+          --health-cmd "pg_isready -U $${DB_USER} -d $${DB_NAME} -e $${DB_PASSWORD}"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-
+i
     env:
       # Build a DATABASE_URL from secrets and point to the service on localhost
       DATABASE_URL: postgresql://${{ secrets.DB_USER }}:${{ secrets.DB_PASSWORD }}@localhost:5432/${{ secrets.DB_NAME }}
