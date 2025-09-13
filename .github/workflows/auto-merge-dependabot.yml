@@ -15,7 +15,7 @@ jobs:
 
     steps:
       - name: Enable GitHub Auto-Merge
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           # GitHub automatically provides the GITHUB_TOKEN secret to every
           # workflow run. It is available by default and is used for
