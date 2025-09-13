@@ -13,7 +13,7 @@ jobs:
 
     steps:
       - name: Label Dependabot PRs
-        uses: actions/labeler@v3
+        uses: actions/labeler@v6
         with:
           # GitHub automatically provides the GITHUB_TOKEN secret to every
           # workflow run. It is available by default and is used for
