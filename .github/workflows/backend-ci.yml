@@ -1,0 +1,78 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  test-backend:
+    name: Test backend with Postgres
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ${{ secrets.DB_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          POSTGRES_DB: ${{ secrets.DB_NAME }}
+        ports:
+          - 5432:5432
+        options:
+          --health-cmd "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      # Build a DATABASE_URL from secrets and point to the service on localhost
+      DATABASE_URL: postgresql://${{ secrets.DB_USER }}:${{ secrets.DB_PASSWORD }}@localhost:5432/${{ secrets.DB_NAME }}
+      # Keep individual vars for code paths that read discrete envs
+      DB_HOST: localhost
+      DB_PORT: 5432
+      DB_USER: ${{ secrets.DB_USER }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      DB_NAME: ${{ secrets.DB_NAME }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: backend/package.json
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Wait for Postgres to be ready
+        run: |
+          for i in {1..30}; do
+            if pg_isready -h localhost -p 5432 -U "$DB_USER" -d "$DB_NAME"; then
+              echo "Postgres is ready"; exit 0; fi;
+            echo "Waiting for Postgres..."; sleep 2;
+          done
+          echo "Postgres did not become ready in time"; exit 1
+      - name: Run database migrations
+        working-directory: backend
+        run: npm run migrate
+
+      - name: Run backend tests
+        working-directory: backend
+        run: npm test -- --ci --reporters=default --reporters=jest-junit
+        env:
+          JEST_JUNIT_OUTPUT: junit.xml
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-junit
+          path: backend/junit.xml

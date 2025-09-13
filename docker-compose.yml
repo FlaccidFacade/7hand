@@ -15,19 +15,19 @@ services:
       - NODE_ENV=production
       - DB_HOST=db
       - DB_PORT=5432
-      - DB_USER=${DB_USER:-card-game}
+      - DB_USER=${DB_USER:card-game}
       - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=${DB_NAME:-card-game-db}
-      - DATABASE_URL=postgres://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME:-card-game-db}
+      - DB_NAME=${DB_NAME:card-game-db}
+      - DATABASE_URL=postgres://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME:card-game-db}
     depends_on:
       - db
   db:
     image: postgres:16
     restart: always
     environment:
-      POSTGRES_USER: ${DB_USER:-card-game}
+      POSTGRES_USER: ${DB_USER:card-game}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME:-card-game-db}
+      POSTGRES_DB: ${DB_NAME:card-game-db}
     ports:
       - "5432:5432"
     volumes:
