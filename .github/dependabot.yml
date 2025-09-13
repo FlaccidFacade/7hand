@@ -9,16 +9,41 @@ updates:
     directory: "/frontend" # Location of package manifests
     schedule:
       interval: "daily"
+    commit-message:
+      prefix: "deps"
+    target-branch: "main"
+    groups:
+      all-frontend-packages:
+        patterns:
+          - "**/*"
   
   - package-ecosystem: "npm" # See documentation for possible values
     directory: "/backend" # Location of package manifests
     schedule:
       interval: "daily"
+    schedule:
+      interval: "daily"
+    commit-message:
+      prefix: "deps"
+    target-branch: "main"
+    groups:
+      all-backend-packages:
+        patterns:
+          - "**/*"
 
   - package-ecosystem: "npm" # See documentation for possible values
     directory: "/selenium" # Location of package manifests
     schedule:
       interval: "daily"
+    schedule:
+      interval: "daily"
+    commit-message:
+      prefix: "deps"
+    target-branch: "main"
+    groups:
+      all-backend-packages:
+        patterns:
+          - "**/*"
       
   # Enable version updates for Docker
   - package-ecosystem: "docker"
@@ -36,4 +61,3 @@ updates:
     schedule:
       interval: "weekly"
       
-  
