@@ -1,0 +1,32 @@
+name: Auto Merge Dependabot PRs
+permissions:
+  contents: write
+  pull-requests: write
+
+on:
+  pull_request:
+    types:
+      - labeled
+
+jobs:
+  auto-merge:
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Enable GitHub Auto-Merge
+        uses: actions/github-script@v7
+        with:
+          # GitHub automatically provides the GITHUB_TOKEN secret to every
+          # workflow run. It is available by default and is used for
+          # authentication with the GitHub API (for actions like merging
+          # PRs, pushing code, etc.). You can reference it as 
+          # secrets.GITHUB_TOKEN  in your workflows without any manual setup.
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.rest.pulls.merge({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+              merge_method: "squash"
+            });
