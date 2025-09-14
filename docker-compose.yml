@@ -48,8 +48,9 @@ services:
     depends_on:
       - selenium-hub
     environment:
-      - HUB_HOST=selenium-hub
-      - HUB_PORT=4444
+      - SE_EVENT_BUS_HOST=selenium-hub
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
 
   # Firefox Node  
   selenium-firefox:
@@ -59,8 +60,9 @@ services:
     depends_on:
       - selenium-hub
     environment:
-      - HUB_HOST=selenium-hub
-      - HUB_PORT=4444
+      - SE_EVENT_BUS_HOST=selenium-hub
+      - SE_EVENT_BUS_PUBLISH_PORT=4442
+      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
 
   # Selenium Tests
   selenium-tests:
@@ -70,13 +72,11 @@ services:
       - selenium-hub
       - selenium-chrome
       - selenium-firefox
-      - frontend
     environment:
       - SELENIUM_REMOTE_URL=http://selenium-hub:4444/wd/hub
-      - FRONTEND_URL=http://frontend
-    volumes:
-      - ./selenium:/app
-    command: ["sh", "-c", "sleep 10 && npm test"]
+    ports:
+      - "8080:8080"
+    command: ["sh", "-c", "sleep 10 && npm run test:grid"]
 
 volumes:
   db-data:
