@@ -1,4 +1,6 @@
 name: Selenium CI
+permissions:
+  contents: read
 
 on:
   push:
