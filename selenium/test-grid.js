@@ -90,21 +90,29 @@ async function testBrowser(browserName, frontendUrl) {
   console.log(`Frontend URL: ${frontendUrl}`);
   
   let allTestsPassed = true;
+  const testResults = {};
   
   try {
     for (const browser of browsers) {
       try {
         const result = await testBrowser(browser, frontendUrl);
+        testResults[browser] = result;
         if (!result) {
           allTestsPassed = false;
         }
       } catch (error) {
         console.log(`✗ Failed to test ${browser}: ${error.message}`);
+        testResults[browser] = false;
         allTestsPassed = false;
       }
     }
     
     console.log('\n=== Test Summary ===');
+    console.log('Browser test results:');
+    for (const [browser, passed] of Object.entries(testResults)) {
+      console.log(`  ${browser}: ${passed ? '✓ PASSED' : '✗ FAILED'}`);
+    }
+    
     if (allTestsPassed) {
       console.log('✓ All browser tests passed successfully!');
     } else {

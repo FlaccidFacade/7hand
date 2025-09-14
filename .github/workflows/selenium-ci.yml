@@ -1,0 +1,111 @@
+name: Selenium CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'selenium/**'
+      - 'docker-compose.yml'
+      - '.github/workflows/selenium-ci.yml'
+  workflow_dispatch:
+
+jobs:
+  selenium-tests:
+    name: Multi-browser Selenium Tests
+    runs-on: ubuntu-latest
+
+    services:
+      selenium-hub:
+        image: selenium/hub:4.15.0
+        ports:
+          - 4444:4444
+        options: >-
+          --health-cmd "curl -f http://localhost:4444/wd/hub/status"
+          --health-interval 30s
+          --health-timeout 10s
+          --health-retries 5
+          --health-start-period 30s
+
+      selenium-chrome:
+        image: selenium/node-chrome:4.15.0
+        env:
+          SE_EVENT_BUS_HOST: selenium-hub
+          SE_EVENT_BUS_PUBLISH_PORT: 4442
+          SE_EVENT_BUS_SUBSCRIBE_PORT: 4443
+          SE_OPTS: "--log-level INFO"
+        options: >-
+          --shm-size=2gb
+          --link selenium-hub:selenium-hub
+
+      selenium-firefox:
+        image: selenium/node-firefox:4.15.0
+        env:
+          SE_EVENT_BUS_HOST: selenium-hub
+          SE_EVENT_BUS_PUBLISH_PORT: 4442
+          SE_EVENT_BUS_SUBSCRIBE_PORT: 4443
+          SE_OPTS: "--log-level INFO"
+        options: >-
+          --shm-size=2gb
+          --link selenium-hub:selenium-hub
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: selenium/package.json
+
+      - name: Install selenium test dependencies
+        working-directory: selenium
+        run: npm ci
+
+      - name: Wait for Selenium Grid to be ready
+        run: |
+          echo "Waiting for Selenium Grid to be ready..."
+          for i in {1..60}; do
+            if curl -f http://localhost:4444/wd/hub/status > /dev/null 2>&1; then
+              echo "Selenium Grid is responding"
+              break
+            fi
+            echo "Waiting for Selenium Grid... ($i/60)"
+            sleep 5
+          done
+          
+          # Wait for both browser nodes to register
+          echo "Waiting for browser nodes to register..."
+          for i in {1..30}; do
+            NODES=$(curl -s http://localhost:4444/wd/hub/status | grep -o '"ready":[^,]*' | grep -o 'true' | wc -l || echo "0")
+            echo "Found $NODES ready nodes"
+            if [ "$NODES" -ge 2 ]; then
+              echo "Both browser nodes are ready"
+              break
+            fi
+            echo "Waiting for browser nodes... ($i/30)"
+            sleep 10
+          done
+          
+          # Show final grid status
+          echo "Final Selenium Grid Status:"
+          curl -s http://localhost:4444/wd/hub/status || echo "Failed to get status"
+
+      - name: Run multi-browser Selenium tests
+        working-directory: selenium
+        env:
+          SELENIUM_REMOTE_URL: http://localhost:4444/wd/hub
+        run: npm run test:grid
+
+      - name: Upload test artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: selenium-test-logs
+          path: |
+            selenium/*.log
+            selenium/screenshots/
+          retention-days: 7
