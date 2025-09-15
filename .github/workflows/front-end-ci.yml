@@ -53,11 +53,7 @@ jobs:
         working-directory: ./frontend
 
       - name: Run unit tests (headless Chrome with coverage)
-        run: >-
-          npx ng test
-          --watch=false
-          --browsers=ChromeHeadless
-          --code-coverage
+        run: npm run test:ci
         working-directory: ./frontend
 
       - name: Upload coverage report
