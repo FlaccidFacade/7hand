@@ -21,7 +21,7 @@ on:
       - main
 
 jobs:
-  build-and-test:
+  frontend-ci:
     runs-on: ubuntu-22.04
 
     steps:
