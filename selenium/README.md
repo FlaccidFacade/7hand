@@ -87,6 +87,31 @@ Environment variables:
 - `SELENIUM_REMOTE_URL` - Selenium Grid Hub URL (default: http://localhost:4444/wd/hub)
 - `FRONTEND_URL` - URL of the application to test (for integration with actual frontend)
 
+### CI Environment Configuration
+
+For Continuous Integration environments, browsers are configured to run in offline mode to prevent external network calls:
+
+#### Chrome Configuration
+- `--no-sandbox` - Required for containerized environments
+- `--disable-dev-shm-usage` - Prevents /dev/shm exhaustion
+- `--disable-background-networking` - Prevents telemetry calls
+- `--disable-default-apps`, `--disable-extensions`, `--disable-sync` - Disables unnecessary features
+- `--disable-translate` - Prevents Google Translate API calls
+- `--no-first-run` - Skips first-run setup
+- `--disable-component-update` - Prevents component update checks
+- `--disable-domain-reliability` - Disables domain reliability service
+- `--disable-client-side-phishing-detection` - Disables phishing detection service
+
+#### Firefox Configuration
+- `--no-remote` - Prevents external connections
+- Disabled preferences:
+  - Safe browsing features
+  - Telemetry and health reporting
+  - Automatic updates
+  - DNS prefetching and speculative connections
+
+These configurations ensure browsers run reliably in CI environments without attempting external network connections that may be blocked by firewalls.
+
 ## Browser Support
 
 Currently supports:

@@ -36,7 +36,23 @@ jobs:
           SE_EVENT_BUS_HOST: selenium-hub
           SE_EVENT_BUS_PUBLISH_PORT: 4442
           SE_EVENT_BUS_SUBSCRIBE_PORT: 4443
-          SE_OPTS: "--log-level INFO"
+          SE_OPTS: >-
+            --log-level INFO
+          SE_NODE_MAX_INSTANCES: 2
+          SE_NODE_MAX_SESSIONS: 2
+          CHROME_OPTS: >-
+            --no-sandbox
+            --disable-dev-shm-usage
+            --disable-background-networking
+            --disable-default-apps
+            --disable-extensions
+            --disable-sync
+            --disable-translate
+            --no-first-run
+            --disable-background-timer-throttling
+            --disable-renderer-backgrounding
+            --disable-backgrounding-occluded-windows
+            --disable-features=VizDisplayCompositor,TranslateUI
         options: >-
           --shm-size=2gb
           --link selenium-hub:selenium-hub
@@ -47,7 +63,13 @@ jobs:
           SE_EVENT_BUS_HOST: selenium-hub
           SE_EVENT_BUS_PUBLISH_PORT: 4442
           SE_EVENT_BUS_SUBSCRIBE_PORT: 4443
-          SE_OPTS: "--log-level INFO"
+          SE_OPTS: >-
+            --log-level INFO
+          SE_NODE_MAX_INSTANCES: 2
+          SE_NODE_MAX_SESSIONS: 2
+          FIREFOX_OPTS: >-
+            --no-remote
+            --disable-background-networking
         options: >-
           --shm-size=2gb
           --link selenium-hub:selenium-hub

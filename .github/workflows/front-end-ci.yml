@@ -28,6 +28,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
 
+      - name: Install Chrome dependencies (before firewall)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libnss3 libgdk-pixbuf-2.0-0 libgtk-3-0 libx11-xcb1 libxcomposite1 libxrandr2 libxi6 \
+            libasound2 libpangocairo-1.0-0 libxdamage1 libpango-1.0-0 libatk1.0-0 libatk-bridge2.0-0 \
+            libcups2 libdrm2 libgbm1 libxcb1 libxshmfence1
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -43,18 +51,29 @@ jobs:
         run: npm run build -- --configuration production
         working-directory: ./frontend
 
-      - name: Install Chrome dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            libnss3 libgdk-pixbuf-2.0-0 libgtk-3-0 libx11-xcb1 libxcomposite1 libxrandr2 libxi6 \
-            libasound2 libpangocairo-1.0-0 libxdamage1 libpango-1.0-0 libatk1.0-0 libatk-bridge2.0-0 \
-            libcups2 libdrm2 libgbm1 libxcb1 libxshmfence1
-        working-directory: ./frontend
-
       - name: Run unit tests (headless Chrome with coverage)
         run: npm run test:ci
         working-directory: ./frontend
+        env:
+          # Configure Chrome for CI environment
+          CHROME_BIN: /usr/bin/google-chrome
+          CHROME_FLAGS: >-
+            --no-sandbox
+            --disable-dev-shm-usage
+            --disable-background-networking
+            --disable-default-apps
+            --disable-extensions
+            --disable-sync
+            --disable-translate
+            --hide-scrollbars
+            --metrics-recording-only
+            --mute-audio
+            --no-first-run
+            --safebrowsing-disable-auto-update
+            --disable-background-timer-throttling
+            --disable-renderer-backgrounding
+            --disable-backgrounding-occluded-windows
+            --disable-features=TranslateUI,BlinkGenPropertyTrees
 
       - name: Upload coverage report
         if: always()

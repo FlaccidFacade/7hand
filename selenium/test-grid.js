@@ -1,4 +1,6 @@
 const { Builder, By, until } = require('selenium-webdriver');
+const chrome = require('selenium-webdriver/chrome');
+const firefox = require('selenium-webdriver/firefox');
 const http = require('http');
 
 const seleniumRemoteUrl = process.env.SELENIUM_REMOTE_URL || 'http://localhost:4444/wd/hub';
@@ -43,10 +45,54 @@ function createTestServer() {
 async function testBrowser(browserName, frontendUrl) {
   console.log(`\n=== Testing ${browserName.toUpperCase()} browser ===`);
   
-  let driver = await new Builder()
-    .forBrowser(browserName)
-    .usingServer(seleniumRemoteUrl)
-    .build();
+  let builder = new Builder();
+  
+  // Configure browser-specific options for CI environment
+  if (browserName === 'chrome') {
+    const chromeOptions = new chrome.Options();
+    chromeOptions.addArguments([
+      '--no-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-background-networking',
+      '--disable-default-apps',
+      '--disable-extensions',
+      '--disable-sync',
+      '--disable-translate',
+      '--no-first-run',
+      '--disable-background-timer-throttling',
+      '--disable-renderer-backgrounding',
+      '--disable-backgrounding-occluded-windows',
+      '--disable-features=TranslateUI,BlinkGenPropertyTrees,VizDisplayCompositor',
+      '--disable-component-update',
+      '--disable-domain-reliability',
+      '--disable-client-side-phishing-detection'
+    ]);
+    builder = builder.forBrowser('chrome').setChromeOptions(chromeOptions);
+  } else if (browserName === 'firefox') {
+    const firefoxOptions = new firefox.Options();
+    firefoxOptions.addArguments([
+      '--no-remote'
+    ]);
+    // Disable various Firefox features that try to connect externally
+    firefoxOptions.setPreference('network.dns.disableIPv6', true);
+    firefoxOptions.setPreference('network.prefetch-next', false);
+    firefoxOptions.setPreference('network.http.speculative-parallel-limit', 0);
+    firefoxOptions.setPreference('dom.ipc.plugins.enabled.libflashplayer.so', false);
+    firefoxOptions.setPreference('browser.safebrowsing.enabled', false);
+    firefoxOptions.setPreference('browser.safebrowsing.malware.enabled', false);
+    firefoxOptions.setPreference('browser.safebrowsing.phishing.enabled', false);
+    firefoxOptions.setPreference('browser.search.update', false);
+    firefoxOptions.setPreference('app.update.enabled', false);
+    firefoxOptions.setPreference('toolkit.telemetry.enabled', false);
+    firefoxOptions.setPreference('datareporting.policy.dataSubmissionEnabled', false);
+    firefoxOptions.setPreference('datareporting.healthreport.service.enabled', false);
+    firefoxOptions.setPreference('datareporting.healthreport.uploadEnabled', false);
+    builder = builder.forBrowser('firefox').setFirefoxOptions(firefoxOptions);
+  } else {
+    builder = builder.forBrowser(browserName);
+  }
+  
+  let driver = await builder.usingServer(seleniumRemoteUrl).build();
     
   try {
     console.log(`Navigating to ${frontendUrl} with ${browserName}`);
