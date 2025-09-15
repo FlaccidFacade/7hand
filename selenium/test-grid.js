@@ -86,7 +86,8 @@ async function testBrowser(browserName, frontendUrl) {
   
   // Start test server
   const { server, port } = await createTestServer();
-  const frontendUrl = `http://localhost:${port}`;
+  // Use the container name that other containers can reach
+  const frontendUrl = `http://selenium-tests:${port}`;
   console.log(`Frontend URL: ${frontendUrl}`);
   
   let allTestsPassed = true;
