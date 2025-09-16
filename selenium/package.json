@@ -4,7 +4,11 @@
   "main": "test.js",
   "license": "MIT",
   "scripts": {
-    "test": "node test.js"
+    "test": "node test.js",
+    "test:standalone": "node test-standalone.js",
+    "test:grid": "node test-grid.js",
+    "test:local": "node test-local.js",
+    "test:demo": "node test-demo.js"
   },
   "dependencies": {
     "selenium-webdriver": "^4.21.0"

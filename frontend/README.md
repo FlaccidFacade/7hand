@@ -44,6 +44,23 @@ To execute unit tests with the [Karma](https://karma-runner.github.io) test runn
 ng test
 ```
 
+### Available Test Scripts
+
+- `npm test` - Run all tests (including health service tests)
+- `npm run test:unit` - Run unit tests excluding health service tests
+- `npm run test:ci` - Run tests in CI mode with ChromeHeadlessCI configuration
+
+### CI Testing Configuration
+
+For CI environments, the project uses a custom Chrome launcher (`ChromeHeadlessCI`) that includes browser flags to prevent external network calls:
+
+- Disables background networking and telemetry
+- Prevents external service connections (Google APIs, update services)
+- Optimized for containerized CI environments
+- Includes `--no-sandbox` and `--disable-dev-shm-usage` for Docker compatibility
+
+The CI configuration is defined in `karma.conf.js` and ensures reliable test execution in environments with network restrictions.
+
 ## Running end-to-end tests
 
 For end-to-end (e2e) testing, run:

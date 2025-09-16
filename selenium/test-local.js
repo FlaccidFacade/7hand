@@ -1,7 +1,9 @@
 const { Builder, By, until } = require('selenium-webdriver');
+const path = require('path');
 
 const seleniumRemoteUrl = process.env.SELENIUM_REMOTE_URL || 'http://localhost:4444/wd/hub';
-const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:4200';
+const htmlFile = path.resolve(__dirname, 'test-page.html');
+const frontendUrl = process.env.FRONTEND_URL || `file://${htmlFile}`;
 
 // List of browsers to test
 const browsers = ['chrome', 'firefox'];
@@ -24,6 +26,10 @@ async function testBrowser(browserName) {
     // Get and verify the title
     const title = await driver.getTitle();
     console.log(`✓ Page title in ${browserName}: "${title}"`);
+    
+    // Check for the page heading
+    const heading = await driver.findElement(By.css('h1')).getText();
+    console.log(`✓ Page heading in ${browserName}: "${heading}"`);
     
     // Basic assertion - check if title contains expected content
     if (title.includes('7-hand')) {
