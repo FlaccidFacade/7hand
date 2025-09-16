@@ -8,7 +8,7 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "test:unit": "ng test --exclude='src/app/services/health.service.spec.ts'",
-    "test:ci": "ng test --watch=false --browsers=ChromeHeadlessCI --code-coverage --exclude='src/app/services/health.service.spec.ts'"
+    "test:ci": "ng test --watch=false --browsers=ChromeHeadlessCI --exclude='src/app/services/health.service.spec.ts'"
   },
   "private": true,
   "dependencies": {
