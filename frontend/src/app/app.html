@@ -1,9 +1,17 @@
-<app-header [health$]="health$"></app-header>
+<!-- Show login page by default -->
+<div *ngIf="showLogin">
+  <app-landing></app-landing>
+</div>
 
-<main class="main">
-  <div class="table-content">
-    <app-table-top></app-table-top>
-  </div>
-</main>
+<!-- Show game content after login -->
+<div *ngIf="!showLogin">
+  <app-header [health$]="health$"></app-header>
+
+  <main class="main">
+    <div class="table-content">
+      <app-table-top></app-table-top>
+    </div>
+  </main>
+</div>
 
 <router-outlet />

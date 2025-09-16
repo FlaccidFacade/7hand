@@ -1,0 +1,24 @@
+.landing-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #74b9ff, #0984e3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.landing-content {
+  width: 100%;
+  max-width: 500px;
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .landing-container {
+    padding: 10px;
+  }
+  
+  .landing-content {
+    max-width: 100%;
+  }
+}

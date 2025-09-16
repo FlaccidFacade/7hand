@@ -1,0 +1,51 @@
+<div class="login-form-container">
+  <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+    <h2 class="login-title">Login to Seven Hand Card Game</h2>
+    
+    <div class="form-group">
+      <label for="username" class="form-label">Username</label>
+      <input
+        type="text"
+        id="username"
+        formControlName="username"
+        class="form-input"
+        [class.error]="username?.invalid && username?.touched"
+        placeholder="Enter your username"
+      />
+      <div class="error-message" *ngIf="username?.invalid && username?.touched">
+        <span *ngIf="username?.errors?.['required']">Username is required</span>
+        <span *ngIf="username?.errors?.['minlength']">Username must be at least 3 characters</span>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="password" class="form-label">Password</label>
+      <input
+        type="password"
+        id="password"
+        formControlName="password"
+        class="form-input"
+        [class.error]="password?.invalid && password?.touched"
+        placeholder="Enter your password"
+      />
+      <div class="error-message" *ngIf="password?.invalid && password?.touched">
+        <span *ngIf="password?.errors?.['required']">Password is required</span>
+        <span *ngIf="password?.errors?.['minlength']">Password must be at least 6 characters</span>
+      </div>
+    </div>
+
+    <button
+      type="submit"
+      class="login-button"
+      [disabled]="isLoading"
+      [class.loading]="isLoading"
+    >
+      <span *ngIf="!isLoading">Login</span>
+      <span *ngIf="isLoading">Logging in...</span>
+    </button>
+
+    <div class="form-footer">
+      <p class="demo-note">Demo credentials: any username (3+ chars) and password (6+ chars)</p>
+    </div>
+  </form>
+</div>
