@@ -47,8 +47,22 @@ describe('Landing', () => {
     expect(landingContent).toBeTruthy();
     
     const children = landingContent.children;
-    expect(children.length).toBe(2);
+    expect(children.length).toBe(3);
     expect(children[0].name).toBe('app-logo');
     expect(children[1].name).toBe('app-login-form');
+    expect(children[2].name).toBe('div');
+  });
+
+  it('should contain the rules link', () => {
+    const rulesButton = debugElement.query(By.css('.rules-link'));
+    expect(rulesButton).toBeTruthy();
+    expect(rulesButton.nativeElement.textContent.trim()).toBe('View Game Rules');
+  });
+
+  it('should call onShowRules when rules button is clicked', () => {
+    component.onShowRules = jasmine.createSpy('onShowRules');
+    const rulesButton = debugElement.query(By.css('.rules-link'));
+    rulesButton.triggerEventHandler('click', null);
+    expect(component.onShowRules).toHaveBeenCalled();
   });
 });

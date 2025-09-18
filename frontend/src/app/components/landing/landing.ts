@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import { Logo } from '../logo/logo';
 import { LoginForm } from '../login-form/login-form';
 
@@ -9,5 +9,11 @@ import { LoginForm } from '../login-form/login-form';
   styleUrl: './landing.css'
 })
 export class Landing {
+  @Input() onShowRules?: () => void;
 
+  showRules() {
+    if (this.onShowRules) {
+      this.onShowRules();
+    }
+  }
 }

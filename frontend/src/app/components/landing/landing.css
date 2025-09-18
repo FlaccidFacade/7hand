@@ -13,6 +13,32 @@
   text-align: center;
 }
 
+.landing-footer {
+  margin-top: 30px;
+}
+
+.rules-link {
+  background: none;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+}
+
+.rules-link:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.rules-link:active {
+  transform: translateY(0);
+}
+
 @media (max-width: 768px) {
   .landing-container {
     padding: 10px;

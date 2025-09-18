@@ -5,7 +5,7 @@
 
 <!-- Show game content after login -->
 <div *ngIf="!showLogin">
-  <app-header [health$]="health$"></app-header>
+  <app-header [health$]="health$" [onShowRules]="showRules"></app-header>
 
   <main class="main">
     <div class="table-content">
@@ -13,5 +13,11 @@
     </div>
   </main>
 </div>
+
+<!-- Rules overlay - shows over everything -->
+<app-rules-overlay 
+  [isVisible]="showRulesOverlay" 
+  (closeOverlay)="hideRules()">
+</app-rules-overlay>
 
 <router-outlet />
