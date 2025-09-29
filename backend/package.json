@@ -17,7 +17,7 @@
     "uuid": "^9.0.0"
   },
   "devDependencies": {
-    "jest": "^29.7.0",
+    "jest": "^30.2.0",
     "supertest": "^6.3.4",
     "node-pg-migrate": "^8.0.3"
   }
