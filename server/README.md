@@ -306,21 +306,79 @@ Follow idiomatic Go conventions:
 
 ## GameLift Anywhere Integration
 
-The server is prepared for Amazon GameLift Anywhere deployment:
+The server now includes full Amazon GameLift Server SDK integration with support for all required and optional callbacks.
 
-1. The `config/gamelift.go` file contains placeholder integration code
-2. AWS SDK for Go v2 is included as a dependency
-3. Configuration supports `GAME_FLEET_ID` for fleet identification
+### Important: All Callbacks Are Required in Production
+
+While AWS documentation marks `OnHealthCheck` and `OnUpdateGameSession` as "(Optional)", **best practice requires implementing all four callbacks**:
+
+1. **OnStartGameSession** (Required) - Handles game session activation
+2. **OnProcessTerminate** (Required) - Handles graceful server shutdown
+3. **OnHealthCheck** (Optional but Recommended) - Reports server health every 60 seconds
+4. **OnUpdateGameSession** (Optional but Required for FlexMatch) - Handles matchmaking backfill updates
+
+Our implementation provides all four callbacks to ensure:
+- GameLift can monitor server process health
+- Proper game session lifecycle management
+- Support for FlexMatch backfill feature
+- Graceful shutdown handling
+
+### Enabling GameLift Integration
+
+To enable GameLift Server SDK integration, set the environment variable:
+
+```bash
+ENABLE_GAMELIFT=true
+```
+
+### Configuration
+
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| `ENABLE_GAMELIFT` | Enable GameLift Server SDK | `false` | No |
+| `PORT` | Server port | `8080` | Yes |
+| `GAME_FLEET_ID` | GameLift fleet ID | `local-fleet` | When GameLift enabled |
+| `AWS_REGION` | AWS region for GameLift | `us-east-1` | When GameLift enabled |
+| `ENVIRONMENT` | Environment (development/production/container) | `development` | No |
+| `GAMELIFT_WEBSOCKET_URL` | WebSocket URL for Anywhere fleets | - | For Anywhere fleets |
+
+### Running with GameLift
+
+#### For Managed EC2 or Container Fleets
+
+```bash
+ENABLE_GAMELIFT=true PORT=7777 go run main.go
+```
+
+#### For GameLift Anywhere Fleets
+
+```bash
+ENABLE_GAMELIFT=true \
+GAMELIFT_WEBSOCKET_URL=wss://your-websocket-url \
+GAMELIFT_PROCESS_ID=your-process-id \
+GAMELIFT_HOST_ID=your-host-id \
+GAMELIFT_AUTH_TOKEN=your-auth-token \
+go run main.go
+```
+
+### Callback Implementations
+
+All callbacks are implemented in `config/gamelift_callbacks.go`:
+
+- **OnHealthCheck**: Always reports healthy (customize for production)
+- **OnStartGameSession**: Creates game session and calls ActivateGameSession()
+- **OnProcessTerminate**: Performs graceful shutdown and calls ProcessEnding()
+- **OnUpdateGameSession**: Logs matchmaking data updates for FlexMatch backfill
 
 ### Future GameLift Integration
 
-To complete GameLift Anywhere integration:
+To complete GameLift Anywhere integration, the following areas need attention:
 
-1. Implement `RegisterCompute` API call in `gamelift.go`
-2. Add `ProcessReady` notification
-3. Handle GameSession requests
-4. Implement player session validation
-5. Add health reporting to GameLift
+1. Enhanced health checks based on actual server metrics
+2. Integration with game session data in the lobby system
+3. Player session validation using AcceptPlayerSession() and RemovePlayerSession()
+4. Custom matchmaking data handling for FlexMatch
+5. Game state persistence for session recovery
 
 ## Deployment
 
