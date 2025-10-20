@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/FlaccidFacade/seven-hand-card-game/server/models"
+	"github.com/FlaccidFacade/7hand/server/models"
 )
 
 // Manager handles all game lobbies and sessions

@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/FlaccidFacade/seven-hand-card-game/server/game"
-	"github.com/FlaccidFacade/seven-hand-card-game/server/models"
+	"github.com/FlaccidFacade/7hand/server/game"
+	"github.com/FlaccidFacade/7hand/server/models"
 	"github.com/gorilla/websocket"
 )
 

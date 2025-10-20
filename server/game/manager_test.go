@@ -3,7 +3,7 @@ package game
 import (
 	"testing"
 
-	"github.com/FlaccidFacade/seven-hand-card-game/server/models"
+	"github.com/FlaccidFacade/7hand/server/models"
 )
 
 func TestNewManager(t *testing.T) {
