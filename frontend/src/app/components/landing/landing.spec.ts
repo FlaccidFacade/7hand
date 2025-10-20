@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
+import { provideRouter } from '@angular/router';
 
 import { Landing } from './landing';
 import { Logo } from '../logo/logo';
@@ -13,7 +14,8 @@ describe('Landing', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [Landing, Logo, LoginForm]
+      imports: [Landing, Logo, LoginForm],
+      providers: [provideRouter([])]
     })
     .compileComponents();
 
