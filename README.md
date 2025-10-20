@@ -1,6 +1,6 @@
-# seven-hand-card-game
+# 7hand
 
-a rummy variation for all ages
+is a rummy variation for all ages. featuring 7 hands to play each game!
 
 ## Getting Started with Development
 
