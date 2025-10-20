@@ -1,6 +1,6 @@
 # Selenium Multi-Browser Testing Setup
 
-This directory contains a complete Selenium Grid setup for testing the Seven Hand Card Game title across multiple browser types (Chrome and Firefox).
+This directory contains a complete Selenium Grid setup for testing the 7hand title across multiple browser types (Chrome and Firefox).
 
 ## Files
 
@@ -121,7 +121,7 @@ Currently supports:
 
 ## Integration Notes
 
-This setup can be extended to test the actual Seven Hand Card Game frontend by:
+This setup can be extended to test the actual 7hand frontend by:
 1. Ensuring the frontend service is running
 2. Updating the `FRONTEND_URL` environment variable
 3. Modifying test assertions as needed for the actual application

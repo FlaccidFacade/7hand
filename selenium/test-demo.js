@@ -15,7 +15,7 @@ async function testBrowser(browserName) {
     
   try {
     // Test with a simple data URL that has our expected title
-    const testUrl = 'data:text/html,<html><head><title>7-hand Test Page</title></head><body><h1>Seven Hand Card Game</h1><p>Multi-browser test successful!</p></body></html>';
+    const testUrl = 'data:text/html,<html><head><title>7-hand Test Page</title></head><body><h1>7hand</h1><p>Multi-browser test successful!</p></body></html>';
     
     console.log(`Testing data URL with ${browserName}`);
     await driver.get(testUrl);

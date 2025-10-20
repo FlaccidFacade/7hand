@@ -22,8 +22,8 @@ function createTestServer() {
     <title>7-hand</title>
 </head>
 <body>
-    <h1>Seven Hand Card Game</h1>
-    <p>Welcome to the Seven Hand Card Game!</p>
+    <h1>7hand</h1>
+    <p>Welcome to 7hand!</p>
     <p>This is a test page for Selenium multi-browser testing.</p>
 </body>
 </html>`;
