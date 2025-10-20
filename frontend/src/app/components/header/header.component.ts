@@ -9,4 +9,11 @@ import { Component, Input } from '@angular/core';
 })
 export class HeaderComponent {
   @Input() health$: any;
+  @Input() onShowRules?: () => void;
+
+  showRules() {
+    if (this.onShowRules) {
+      this.onShowRules();
+    }
+  }
 }

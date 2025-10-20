@@ -1,0 +1,73 @@
+<div class="rules-overlay" *ngIf="isVisible" (click)="onOverlayClick($event)">
+  <div class="rules-content">
+    <div class="rules-header">
+      <h2>Seven Hand Card Game Rules</h2>
+      <button class="close-btn" (click)="onClose()" aria-label="Close rules">×</button>
+    </div>
+    
+    <div class="rules-body">
+      <section class="game-objective">
+        <h3>Objective</h3>
+        <p>Be the first player to get rid of all cards in your hand by forming sets and runs.</p>
+      </section>
+
+      <section class="turn-structure">
+        <h3>Turn Structure</h3>
+        <ol>
+          <li><strong>Draw:</strong> Draw a card from the deck to your hand</li>
+          <li><strong>Play:</strong> (Optional) Play sets or runs from your hand to the table</li>
+          <li><strong>Lay off:</strong> (Optional) Add cards to existing sets/runs on the table</li>
+          <li><strong>Discard:</strong> Discard one card from your hand to the discard pile</li>
+        </ol>
+      </section>
+
+      <section class="card-combinations">
+        <h3>Valid Card Combinations</h3>
+        
+        <div class="combination-type">
+          <h4>Sets (3 or more cards of the same rank)</h4>
+          <div class="card-examples">
+            <div class="example-set">
+              <div class="card red">7♥</div>
+              <div class="card black">7♠</div>
+              <div class="card red">7♦</div>
+            </div>
+            <span class="example-text">Three 7s</span>
+          </div>
+        </div>
+
+        <div class="combination-type">
+          <h4>Runs (3 or more consecutive cards of the same suit)</h4>
+          <div class="card-examples">
+            <div class="example-set">
+              <div class="card red">4♥</div>
+              <div class="card red">5♥</div>
+              <div class="card red">6♥</div>
+              <div class="card red">7♥</div>
+            </div>
+            <span class="example-text">Hearts run: 4-5-6-7</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="special-rules">
+        <h3>Special Rules</h3>
+        <ul>
+          <li>Aces can be low (A-2-3) or high (Q-K-A) but not both in the same run</li>
+          <li>You must have at least one set or run on the table before laying off cards</li>
+          <li>The game ends when a player has no cards left in their hand</li>
+          <li>Points are scored based on cards remaining in opponents' hands</li>
+        </ul>
+      </section>
+
+      <section class="scoring">
+        <h3>Scoring</h3>
+        <ul>
+          <li>Aces: 1 point each</li>
+          <li>Number cards (2-10): Face value</li>
+          <li>Face cards (J, Q, K): 10 points each</li>
+        </ul>
+      </section>
+    </div>
+  </div>
+</div>
