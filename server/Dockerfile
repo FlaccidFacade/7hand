@@ -16,6 +16,9 @@ RUN CGO_ENABLED=0 GOOS=linux go build -mod=vendor -a -installsuffix cgo -o serve
 # Runtime stage
 FROM alpine:latest
 
+# Install ca-certificates for HTTPS/TLS connections (needed for AWS SDK)
+RUN apk --no-cache add ca-certificates || true
+
 WORKDIR /root/
 
 # Copy binary from builder
