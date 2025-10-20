@@ -84,7 +84,7 @@ func TestOnStartGameSession(t *testing.T) {
 
 	// Call the callback - it should handle the nil GameLift client gracefully
 	callbacks.OnStartGameSession(gameSession)
-	
+
 	// If we get here without panicking, the test passes
 }
 
@@ -95,7 +95,7 @@ func TestOnProcessTerminate(t *testing.T) {
 
 	// Call the callback - it should handle the nil GameLift client gracefully
 	callbacks.OnProcessTerminate()
-	
+
 	// If we get here without panicking, the test passes
 }
 

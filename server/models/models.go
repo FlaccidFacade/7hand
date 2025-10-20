@@ -26,12 +26,12 @@ func NewPlayer(id, name string) *Player {
 
 // Lobby represents a game lobby/room
 type Lobby struct {
-	ID           string    `json:"id"`
-	Players      []*Player `json:"players"`
-	MaxPlayers   int       `json:"maxPlayers"`
-	CreatedAt    time.Time `json:"createdAt"`
-	LastActivity time.Time `json:"lastActivity"`
-	Started      bool      `json:"started"`
+	ID           string     `json:"id"`
+	Players      []*Player  `json:"players"`
+	MaxPlayers   int        `json:"maxPlayers"`
+	CreatedAt    time.Time  `json:"createdAt"`
+	LastActivity time.Time  `json:"lastActivity"`
+	Started      bool       `json:"started"`
 	GameState    *GameState `json:"gameState,omitempty"`
 }
 
@@ -52,14 +52,14 @@ func (l *Lobby) AddPlayer(player *Player) bool {
 	if len(l.Players) >= l.MaxPlayers {
 		return false
 	}
-	
+
 	// Check if player already exists
 	for _, p := range l.Players {
 		if p.ID == player.ID {
 			return false
 		}
 	}
-	
+
 	l.Players = append(l.Players, player)
 	l.LastActivity = time.Now()
 	return true
@@ -89,12 +89,12 @@ func (l *Lobby) GetPlayer(playerID string) *Player {
 
 // GameState represents the state of an active game
 type GameState struct {
-	CurrentRound int           `json:"currentRound"`
-	CurrentTurn  int           `json:"currentTurn"`
-	Deck         []Card        `json:"deck"`
-	DiscardPile  []Card        `json:"discardPile"`
+	CurrentRound int               `json:"currentRound"`
+	CurrentTurn  int               `json:"currentTurn"`
+	Deck         []Card            `json:"deck"`
+	DiscardPile  []Card            `json:"discardPile"`
 	PlayerHands  map[string][]Card `json:"playerHands"`
-	Started      bool          `json:"started"`
+	Started      bool              `json:"started"`
 }
 
 // Card represents a playing card

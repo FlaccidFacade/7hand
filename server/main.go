@@ -28,7 +28,7 @@ func main() {
 	// Initialize GameLift if enabled (for production deployment)
 	var gameLiftClient *config.GameLiftClient
 	enableGameLift := os.Getenv("ENABLE_GAMELIFT") == "true"
-	
+
 	if enableGameLift {
 		log.Printf("GameLift integration enabled")
 		var err error
@@ -67,7 +67,7 @@ func main() {
 	<-quit
 
 	log.Println("Shutting down server...")
-	
+
 	// Notify GameLift of shutdown if enabled
 	if gameLiftClient != nil {
 		log.Println("Notifying GameLift of process shutdown...")
@@ -88,7 +88,7 @@ func initializeGameLift(cfg *config.Config, gameManager *game.Manager) (*config.
 	// Initialize SDK - for managed fleets use default, for Anywhere use custom params
 	// Check if this is an Anywhere fleet (requires WebSocketURL)
 	webSocketURL := os.Getenv("GAMELIFT_WEBSOCKET_URL")
-	
+
 	if webSocketURL != "" {
 		// Initialize for GameLift Anywhere
 		log.Printf("Initializing GameLift Anywhere with WebSocket URL")
@@ -105,7 +105,7 @@ func initializeGameLift(cfg *config.Config, gameManager *game.Manager) (*config.
 		log.Printf("Initializing GameLift for managed fleet")
 		err = gameLiftClient.InitializeSDK(nil)
 	}
-	
+
 	if err != nil {
 		return nil, err
 	}
@@ -141,7 +141,7 @@ func initializeGameLift(cfg *config.Config, gameManager *game.Manager) (*config.
 		callbacks.OnHealthCheck,
 		callbacks.OnUpdateGameSession,
 	)
-	
+
 	if err != nil {
 		return nil, err
 	}
