@@ -1,7 +1,7 @@
 # Go Backend Implementation - Complete Summary
 
 ## Overview
-Successfully implemented a complete Go backend server for the Seven Hand Card Game with WebSocket support and Amazon GameLift Anywhere integration preparation.
+Successfully implemented a complete Go backend server for 7hand with WebSocket support and Amazon GameLift Anywhere integration preparation.
 
 ## What Was Built
 
@@ -179,8 +179,8 @@ go run main.go
 ```bash
 cd server
 go mod vendor  # If needed
-docker build -t seven-hand-card-game-server .
-docker run -p 8080:8080 seven-hand-card-game-server
+docker build -t 7hand-server .
+docker run -p 8080:8080 7hand-server
 ```
 
 ### Testing

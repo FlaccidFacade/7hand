@@ -1,4 +1,4 @@
-module github.com/FlaccidFacade/seven-hand-card-game/server
+module github.com/FlaccidFacade/7hand/server
 
 go 1.24.9
 

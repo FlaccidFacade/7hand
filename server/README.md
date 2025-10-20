@@ -1,6 +1,6 @@
-# Seven Hand Card Game - Go Backend Server
+# 7hand - Go Backend Server
 
-This is the Go-based backend server for the Seven Hand Card Game, designed for real-time multiplayer gameplay with WebSocket support and Amazon GameLift Anywhere integration.
+This is the Go-based backend server for 7hand, designed for real-time multiplayer gameplay with WebSocket support and Amazon GameLift Anywhere integration.
 
 ## Features
 
@@ -38,8 +38,8 @@ server/
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/FlaccidFacade/seven-hand-card-game.git
-cd seven-hand-card-game/server
+git clone https://github.com/FlaccidFacade/7hand.git
+cd 7hand/server
 ```
 
 2. Install dependencies:
@@ -72,7 +72,7 @@ PORT=9000 GAME_FLEET_ID=my-fleet go run main.go
 
 1. Build the Docker image:
 ```bash
-docker build -t seven-hand-card-game-server .
+docker build -t 7hand-server .
 ```
 
 **Note**: If you encounter certificate issues during Docker build, create a vendor directory:
@@ -83,7 +83,7 @@ Then rebuild the Docker image.
 
 2. Run the container:
 ```bash
-docker run -p 8080:8080 seven-hand-card-game-server
+docker run -p 8080:8080 7hand-server
 ```
 
 ## Configuration
@@ -270,7 +270,7 @@ Returns server health status:
 ```json
 {
   "status": "healthy",
-  "service": "seven-hand-card-game"
+  "service": "7hand"
 }
 ```
 
@@ -282,7 +282,7 @@ Returns server info:
 ```json
 {
   "status": "ok",
-  "message": "Seven Hand Card Game Server"
+  "message": "7hand Server"
 }
 ```
 
@@ -329,11 +329,11 @@ To complete GameLift Anywhere integration:
 The included Dockerfile uses multi-stage builds for minimal image size:
 
 ```bash
-docker build -t seven-hand-card-game-server:latest .
+docker build -t 7hand-server:latest .
 docker run -p 8080:8080 \
   -e GAME_FLEET_ID=production-fleet \
   -e AWS_REGION=us-east-1 \
-  seven-hand-card-game-server:latest
+  7hand-server:latest
 ```
 
 ### GameLift Anywhere Deployment

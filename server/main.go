@@ -7,9 +7,9 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/FlaccidFacade/seven-hand-card-game/server/config"
-	"github.com/FlaccidFacade/seven-hand-card-game/server/game"
-	"github.com/FlaccidFacade/seven-hand-card-game/server/handlers"
+	"github.com/FlaccidFacade/7hand/server/config"
+	"github.com/FlaccidFacade/7hand/server/game"
+	"github.com/FlaccidFacade/7hand/server/handlers"
 )
 
 func main() {
@@ -58,5 +58,5 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 
 func handleHealth(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	w.Write([]byte(`{"status":"healthy","service":"seven-hand-card-game"}`))
+	w.Write([]byte(`{"status":"healthy","service":"7hand"}`))
 }
