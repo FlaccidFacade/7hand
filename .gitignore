@@ -144,4 +144,5 @@ dist
 *.test
 *.out
 /server/bin/
+/server/vendor/
 vendor/

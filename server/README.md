@@ -75,6 +75,12 @@ PORT=9000 GAME_FLEET_ID=my-fleet go run main.go
 docker build -t seven-hand-card-game-server .
 ```
 
+**Note**: If you encounter certificate issues during Docker build, create a vendor directory:
+```bash
+go mod vendor
+```
+Then rebuild the Docker image.
+
 2. Run the container:
 ```bash
 docker run -p 8080:8080 seven-hand-card-game-server
