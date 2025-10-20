@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { App } from './app';
 import { HealthService, HealthStatus } from './services/health.service';
 import { of } from 'rxjs';
@@ -10,6 +11,7 @@ describe('App', () => {
     await TestBed.configureTestingModule({
       imports: [App],
       providers: [
+        provideRouter([]),
         provideHttpClient(withFetch()),
         provideHttpClientTesting(),
         {

@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
+import { provideRouter } from '@angular/router';
 
 import { Landing } from './landing';
 import { Logo } from '../logo/logo';
@@ -13,7 +14,8 @@ describe('Landing', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [Landing, Logo, LoginForm]
+      imports: [Landing, Logo, LoginForm],
+      providers: [provideRouter([])]
     })
     .compileComponents();
 
@@ -47,7 +49,7 @@ describe('Landing', () => {
     expect(landingContent).toBeTruthy();
     
     const children = landingContent.children;
-    expect(children.length).toBe(2);
+    expect(children.length).toBe(3);
     expect(children[0].name).toBe('app-logo');
     expect(children[1].name).toBe('app-login-form');
   });
