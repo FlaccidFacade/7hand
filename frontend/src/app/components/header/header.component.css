@@ -11,6 +11,7 @@
   position: sticky;
   top: 0;
   z-index: 10;
+  padding: 0 20px;
 }
 
 .header-title {
@@ -19,6 +20,35 @@
   letter-spacing: 0.15em;
   color: #ffe066;
   text-shadow: 0 2px 8px #000a;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.rules-btn {
+  background: rgba(255, 224, 102, 0.2);
+  border: 1px solid #ffe066;
+  color: #ffe066;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.rules-btn:hover {
+  background: #ffe066;
+  color: #222c1a;
+  transform: translateY(-1px);
+}
+
+.rules-btn:active {
+  transform: translateY(0);
 }
 
 
