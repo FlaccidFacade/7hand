@@ -11,6 +11,6 @@
     "test:demo": "node test-demo.js"
   },
   "dependencies": {
-    "selenium-webdriver": "^4.36.0"
+    "selenium-webdriver": "^4.37.0"
   }
 }
