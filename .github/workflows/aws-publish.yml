@@ -1,0 +1,76 @@
+name: AWS Publish
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish-to-ecr:
+    name: Build and Publish to AWS ECR
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    strategy:
+      matrix:
+        component:
+          - name: frontend
+            dockerfile: ./frontend/Dockerfile
+            context: ./frontend
+          - name: backend
+            dockerfile: ./backend/Dockerfile
+            context: ./backend
+          - name: server
+            dockerfile: ./server/Dockerfile
+            context: ./server
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Go (for server component)
+        if: matrix.component.name == 'server'
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache-dependency-path: server/go.sum
+
+      - name: Vendor Go dependencies (for server component)
+        if: matrix.component.name == 'server'
+        working-directory: server
+        run: go mod vendor
+
+      - name: Build, tag, and push image to Amazon ECR
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: 7hand-${{ matrix.component.name }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -f ${{ matrix.component.dockerfile }} ${{ matrix.component.context }}
+          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          echo "Image pushed: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+
+      - name: Output image URI
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: 7hand-${{ matrix.component.name }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          echo "::notice title=${{ matrix.component.name }} Image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
