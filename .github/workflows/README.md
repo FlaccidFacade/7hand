@@ -9,7 +9,11 @@ This directory contains GitHub Actions workflows for the 7hand Card Game project
 - **backend-ci.yml** - Tests the Node.js/Express backend with PostgreSQL
 - **front-end-ci.yml** - Builds and tests the Angular frontend
 - **selenium-ci.yml** - Runs multi-browser Selenium tests
+
+### Automation Workflows
+
 - **auto-merge-dependabot.yml** - Automatically merges Dependabot PRs
+- **auto-delete-branch.yml** - Automatically deletes branches after PR merge
 
 ### Publishing Workflows
 
@@ -129,3 +133,30 @@ After a successful build, image URIs will be in the format:
 ```
 
 These URIs are output as workflow notices and can be used in deployment configurations.
+
+### Auto-Delete Branch Workflow
+
+#### auto-delete-branch.yml - Automatic Branch Cleanup
+
+Automatically deletes feature branches after their pull requests are merged, helping keep the repository clean and organized.
+
+**Triggers:**
+- Pull request closed events (only when merged)
+
+**Behavior:**
+- Deletes the source branch when a PR is successfully merged
+- Skips deletion for protected branches: `main`, `master`, `develop`, `staging`, `production`
+- Skips deletion for branches from forked repositories
+- Fails gracefully if branch deletion encounters an error
+
+**Permissions Required:**
+- `contents: write` - To delete branches
+- `pull-requests: read` - To read PR information
+
+**Why Use This:**
+- Automatically cleans up feature branches after merge
+- Reduces repository clutter
+- No manual cleanup needed for merged branches
+- Maintains important branches (main, develop, etc.)
+
+**Note:** This workflow only runs when a PR is merged, not when it's simply closed without merging.
