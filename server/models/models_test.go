@@ -4,6 +4,115 @@ import (
 	"testing"
 )
 
+func TestNewUser(t *testing.T) {
+	user, err := NewUser("testuser", "Test User")
+
+	if err != nil {
+		t.Errorf("Expected no error, got %v", err)
+	}
+
+	if user.Username != "testuser" {
+		t.Errorf("Expected username 'testuser', got '%s'", user.Username)
+	}
+
+	if user.DisplayName != "Test User" {
+		t.Errorf("Expected display name 'Test User', got '%s'", user.DisplayName)
+	}
+
+	if user.ID == "" {
+		t.Error("Expected user ID to be generated")
+	}
+
+	if user.Stats.GamesPlayed != 0 {
+		t.Errorf("Expected 0 games played, got %d", user.Stats.GamesPlayed)
+	}
+}
+
+func TestNewUserDefaultDisplayName(t *testing.T) {
+	user, _ := NewUser("testuser", "")
+
+	if user.DisplayName != "testuser" {
+		t.Errorf("Expected display name to default to username, got '%s'", user.DisplayName)
+	}
+}
+
+func TestValidateUsername(t *testing.T) {
+	tests := []struct {
+		username string
+		wantErr  bool
+	}{
+		{"validuser", false},
+		{"valid-user_123", false},
+		{"ab", true},                   // too short
+		{"a1234567890123456789012", true}, // too long
+		{"invalid@user", true},         // invalid characters
+		{"", true},                     // empty
+		{"valid_user", false},
+		{"VALID123", false},
+	}
+
+	for _, tt := range tests {
+		err := ValidateUsername(tt.username)
+		if (err != nil) != tt.wantErr {
+			t.Errorf("ValidateUsername(%s) error = %v, wantErr %v", tt.username, err, tt.wantErr)
+		}
+	}
+}
+
+func TestUserUpdateActivity(t *testing.T) {
+	user, _ := NewUser("testuser", "Test User")
+	originalLastActive := user.LastActive
+
+	user.UpdateActivity()
+
+	if !user.LastActive.After(originalLastActive) && !user.LastActive.Equal(originalLastActive) {
+		t.Error("Expected LastActive to be updated")
+	}
+}
+
+func TestUserUpdateStats(t *testing.T) {
+	user, _ := NewUser("testuser", "Test User")
+
+	newStats := UserStats{
+		GamesPlayed: 10,
+		GamesWon:    5,
+		GamesLost:   5,
+	}
+
+	user.UpdateStats(newStats)
+
+	if user.Stats.GamesPlayed != 10 {
+		t.Errorf("Expected 10 games played, got %d", user.Stats.GamesPlayed)
+	}
+
+	if user.Stats.GamesWon != 5 {
+		t.Errorf("Expected 5 games won, got %d", user.Stats.GamesWon)
+	}
+}
+
+func TestUserToSafeObject(t *testing.T) {
+	user, _ := NewUser("testuser", "Test User")
+	user.Email = "test@example.com"
+
+	safeObj := user.ToSafeObject()
+
+	if safeObj["username"] != "testuser" {
+		t.Error("Expected username in safe object")
+	}
+
+	if safeObj["displayName"] != "Test User" {
+		t.Error("Expected display name in safe object")
+	}
+
+	if _, exists := safeObj["email"]; exists {
+		t.Error("Email should not be in safe object")
+	}
+
+	if safeObj["id"] == nil {
+		t.Error("Expected id in safe object")
+	}
+}
+
 func TestNewPlayer(t *testing.T) {
 	player := NewPlayer("player1", "Test Player")
 
