@@ -46,20 +46,71 @@ app.get('/api/health', async (req, res) => {
 
 // Lobby endpoints
 app.post('/api/lobby', async (req, res) => {
-  const { user } = req.body;
-  if (!user || !user.id) return res.status(400).json({ error: 'User info required' });
-  const lobby = lobbyManager.createLobby(user);
+  const { userId } = req.body;
+  if (!userId) return res.status(400).json({ error: 'User ID required' });
+  
+  // Get or load user
+  let user = userManager.getUser(userId);
+  if (!user) {
+    const dbUser = await loadUserFromDb(userId);
+    if (!dbUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    user = userManager.createUser({
+      id: dbUser.id,
+      username: dbUser.username,
+      displayName: dbUser.display_name,
+      email: dbUser.email,
+      createdAt: dbUser.created_at,
+      updatedAt: dbUser.updated_at,
+      lastActive: dbUser.last_active,
+      stats: dbUser.stats
+    });
+  }
+  
+  user.updateActivity();
+  await updateUserActivity(userId);
+  
+  const lobby = lobbyManager.createLobby(user.toSafeObject());
   await saveLobbyToDb(lobby);
+  logger.info(`Lobby created: ${lobby.id} by user ${user.username}`);
   res.json({ lobbyId: lobby.id, users: lobby.users });
 });
 
 app.post('/api/lobby/:lobbyId/join', async (req, res) => {
-  const { user } = req.body;
+  const { userId } = req.body;
   const { lobbyId } = req.params;
+  
+  if (!userId) return res.status(400).json({ error: 'User ID required' });
+  
+  // Get or load user
+  let user = userManager.getUser(userId);
+  if (!user) {
+    const dbUser = await loadUserFromDb(userId);
+    if (!dbUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    user = userManager.createUser({
+      id: dbUser.id,
+      username: dbUser.username,
+      displayName: dbUser.display_name,
+      email: dbUser.email,
+      createdAt: dbUser.created_at,
+      updatedAt: dbUser.updated_at,
+      lastActive: dbUser.last_active,
+      stats: dbUser.stats
+    });
+  }
+  
+  user.updateActivity();
+  await updateUserActivity(userId);
+  
   const lobby = lobbyManager.getLobby(lobbyId);
   if (!lobby) return res.status(404).json({ error: 'Lobby not found' });
-  lobby.addUser(user);
+  
+  lobby.addUser(user.toSafeObject());
   await saveLobbyToDb(lobby);
+  logger.info(`User ${user.username} joined lobby ${lobby.id}`);
   res.json({ lobbyId: lobby.id, users: lobby.users });
 });
 
