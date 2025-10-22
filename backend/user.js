@@ -38,7 +38,8 @@ class User {
       errors.push('Display name must be 30 characters or less');
     }
 
-    if (this.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.email)) {
+    // Use a simpler email regex that's not vulnerable to ReDoS
+    if (this.email && !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(this.email)) {
       errors.push('Invalid email format');
     }
 
