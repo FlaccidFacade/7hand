@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { DebugElement } from '@angular/core';
 import { By } from '@angular/platform-browser';
+import { provideRouter } from '@angular/router';
 
 import { LoginForm } from './login-form';
 
@@ -12,7 +13,8 @@ describe('LoginForm', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [LoginForm, ReactiveFormsModule]
+      imports: [LoginForm, ReactiveFormsModule],
+      providers: [provideRouter([])]
     })
     .compileComponents();
 
@@ -45,7 +47,7 @@ describe('LoginForm', () => {
 
   it('should display login title', () => {
     const title = debugElement.query(By.css('.login-title'));
-    expect(title.nativeElement.textContent).toContain('Login to Seven Hand Card Game');
+    expect(title.nativeElement.textContent).toContain('Login to 7hand');
   });
 
   it('should validate username field', () => {

@@ -103,8 +103,26 @@
 .demo-note {
   color: #7f8c8d;
   font-size: 12px;
-  margin: 0;
+  margin: 0 0 12px 0;
   font-style: italic;
+}
+
+.register-link {
+  margin: 0;
+  font-size: 14px;
+  color: #34495e;
+}
+
+.link {
+  color: #3498db;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s ease;
+}
+
+.link:hover {
+  color: #2980b9;
+  text-decoration: underline;
 }
 
 @media (max-width: 480px) {
