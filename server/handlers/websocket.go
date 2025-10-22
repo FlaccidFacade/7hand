@@ -45,12 +45,12 @@ type Client struct {
 
 // Hub maintains active clients and broadcasts messages
 type Hub struct {
-	clients       map[*Client]bool
-	broadcast     chan []byte
-	register      chan *Client
-	unregister    chan *Client
-	gameManager   *game.Manager
-	lobbyClients  map[string]map[*Client]bool
+	clients      map[*Client]bool
+	broadcast    chan []byte
+	register     chan *Client
+	unregister   chan *Client
+	gameManager  *game.Manager
+	lobbyClients map[string]map[*Client]bool
 }
 
 // NewHub creates a new Hub instance
@@ -83,7 +83,7 @@ func (h *Hub) Run() {
 			if _, ok := h.clients[client]; ok {
 				delete(h.clients, client)
 				close(client.send)
-				
+
 				// Remove from lobby clients
 				if client.lobbyID != "" {
 					if clients, ok := h.lobbyClients[client.lobbyID]; ok {
@@ -92,11 +92,11 @@ func (h *Hub) Run() {
 							delete(h.lobbyClients, client.lobbyID)
 						}
 					}
-					
+
 					// Remove player from lobby
 					h.gameManager.LeaveLobby(client.lobbyID, client.playerID)
 				}
-				
+
 				log.Printf("Client unregistered: player=%s lobby=%s", client.playerID, client.lobbyID)
 			}
 
@@ -255,14 +255,14 @@ func (c *Client) handleConnect(msg Message) {
 		PlayerID   string `json:"playerId"`
 		PlayerName string `json:"playerName"`
 	}
-	
+
 	if err := json.Unmarshal(msg.Data, &data); err != nil {
 		c.sendError("Invalid connect data")
 		return
 	}
-	
+
 	c.playerID = data.PlayerID
-	
+
 	response := Message{
 		Type: "connected",
 		Data: json.RawMessage(`{"status":"ok"}`),
@@ -275,27 +275,27 @@ func (c *Client) handleCreateLobby(msg Message) {
 	var data struct {
 		PlayerName string `json:"playerName"`
 	}
-	
+
 	if err := json.Unmarshal(msg.Data, &data); err != nil {
 		c.sendError("Invalid lobby creation data")
 		return
 	}
-	
+
 	player := models.NewPlayer(c.playerID, data.PlayerName)
 	lobby := c.hub.gameManager.CreateLobby(player)
 	c.lobbyID = lobby.ID
-	
+
 	// Register client with lobby
 	if c.hub.lobbyClients[c.lobbyID] == nil {
 		c.hub.lobbyClients[c.lobbyID] = make(map[*Client]bool)
 	}
 	c.hub.lobbyClients[c.lobbyID][c] = true
-	
+
 	responseData, _ := json.Marshal(map[string]interface{}{
 		"lobbyId": lobby.ID,
 		"lobby":   lobby,
 	})
-	
+
 	response := Message{
 		Type: "lobby_created",
 		Data: responseData,
@@ -309,40 +309,40 @@ func (c *Client) handleJoinLobby(msg Message) {
 		LobbyID    string `json:"lobbyId"`
 		PlayerName string `json:"playerName"`
 	}
-	
+
 	if err := json.Unmarshal(msg.Data, &data); err != nil {
 		c.sendError("Invalid join data")
 		return
 	}
-	
+
 	player := models.NewPlayer(c.playerID, data.PlayerName)
 	lobby, success := c.hub.gameManager.JoinLobby(data.LobbyID, player)
-	
+
 	if !success {
 		c.sendError("Failed to join lobby")
 		return
 	}
-	
+
 	c.lobbyID = data.LobbyID
-	
+
 	// Register client with lobby
 	if c.hub.lobbyClients[c.lobbyID] == nil {
 		c.hub.lobbyClients[c.lobbyID] = make(map[*Client]bool)
 	}
 	c.hub.lobbyClients[c.lobbyID][c] = true
-	
+
 	// Broadcast to all lobby members
 	responseData, _ := json.Marshal(map[string]interface{}{
 		"lobbyId": lobby.ID,
 		"lobby":   lobby,
 		"player":  player,
 	})
-	
+
 	response := Message{
 		Type: "player_joined",
 		Data: responseData,
 	}
-	
+
 	broadcastData, _ := json.Marshal(response)
 	c.hub.BroadcastToLobby(c.lobbyID, broadcastData)
 }
@@ -353,21 +353,21 @@ func (c *Client) handleLeaveLobby(msg Message) {
 		c.sendError("Not in a lobby")
 		return
 	}
-	
+
 	lobbyID := c.lobbyID
 	c.hub.gameManager.LeaveLobby(lobbyID, c.playerID)
 	c.lobbyID = ""
-	
+
 	// Notify other players
 	responseData, _ := json.Marshal(map[string]interface{}{
 		"playerId": c.playerID,
 	})
-	
+
 	response := Message{
 		Type: "player_left",
 		Data: responseData,
 	}
-	
+
 	broadcastData, _ := json.Marshal(response)
 	c.hub.BroadcastToLobby(lobbyID, broadcastData)
 }
@@ -378,22 +378,22 @@ func (c *Client) handleStartGame(msg Message) {
 		c.sendError("Not in a lobby")
 		return
 	}
-	
+
 	lobby, success := c.hub.gameManager.StartGame(c.lobbyID)
 	if !success {
 		c.sendError("Failed to start game")
 		return
 	}
-	
+
 	responseData, _ := json.Marshal(map[string]interface{}{
 		"lobby": lobby,
 	})
-	
+
 	response := Message{
 		Type: "game_started",
 		Data: responseData,
 	}
-	
+
 	broadcastData, _ := json.Marshal(response)
 	c.hub.BroadcastToLobby(c.lobbyID, broadcastData)
 }
@@ -402,17 +402,17 @@ func (c *Client) handleStartGame(msg Message) {
 func (c *Client) handlePlayCard(msg Message) {
 	// Placeholder for card playing logic
 	log.Printf("Play card action from player %s in lobby %s", c.playerID, c.lobbyID)
-	
+
 	// TODO: Implement actual card game logic
 	responseData, _ := json.Marshal(map[string]interface{}{
 		"status": "card_played",
 	})
-	
+
 	response := Message{
 		Type: "card_played",
 		Data: responseData,
 	}
-	
+
 	broadcastData, _ := json.Marshal(response)
 	c.hub.BroadcastToLobby(c.lobbyID, broadcastData)
 }
@@ -424,7 +424,7 @@ func (c *Client) sendMessage(msg Message) {
 		log.Printf("Error marshaling message: %v", err)
 		return
 	}
-	
+
 	select {
 	case c.send <- data:
 	default:
