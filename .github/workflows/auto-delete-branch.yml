@@ -1,0 +1,60 @@
+name: Auto Delete Branch on Merge
+
+permissions:
+  contents: write
+  pull-requests: read
+
+on:
+  pull_request:
+    types:
+      - closed
+
+jobs:
+  delete-branch:
+    # Only run if the PR was merged (not just closed)
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Delete merged branch
+        uses: actions/github-script@v8
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const branchName = context.payload.pull_request.head.ref;
+            const protectedBranches = [
+              'main', 'master', 'develop', 'staging', 'production'
+            ];
+
+            // Don't delete protected branches
+            if (protectedBranches.includes(branchName)) {
+              console.log(
+                `Branch "${branchName}" is protected and will not be deleted.`
+              );
+              return;
+            }
+
+            // Don't delete branches from forks
+            const headRepo = context.payload.pull_request.head.repo.full_name;
+            const baseRepo = context.payload.pull_request.base.repo.full_name;
+            if (headRepo !== baseRepo) {
+              console.log(
+                `Branch "${branchName}" is from a fork and will not be deleted.`
+              );
+              return;
+            }
+
+            try {
+              await github.rest.git.deleteRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: `heads/${branchName}`
+              });
+              console.log(`Successfully deleted branch: ${branchName}`);
+            } catch (error) {
+              console.error(
+                `Failed to delete branch ${branchName}:`,
+                error.message
+              );
+              // Don't fail the workflow if branch deletion fails
+            }
