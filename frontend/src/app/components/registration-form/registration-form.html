@@ -1,0 +1,92 @@
+<div class="registration-form-container">
+  <form [formGroup]="registrationForm" (ngSubmit)="onSubmit()" class="registration-form">
+    <h2 class="registration-title">Create Account</h2>
+    <p class="registration-subtitle">Join 7hand and start playing!</p>
+    
+    <!-- Success Message -->
+    <div class="success-message" *ngIf="successMessage">
+      {{ successMessage }}
+    </div>
+
+    <!-- Error Message -->
+    <div class="error-alert" *ngIf="errorMessage">
+      {{ errorMessage }}
+    </div>
+
+    <!-- Username Field -->
+    <div class="form-group">
+      <label for="username" class="form-label">
+        Username <span class="required">*</span>
+      </label>
+      <input
+        type="text"
+        id="username"
+        formControlName="username"
+        class="form-input"
+        [class.error]="username?.invalid && username?.touched"
+        placeholder="Choose a username"
+      />
+      <div class="error-message" *ngIf="username?.invalid && username?.touched">
+        <span *ngIf="username?.errors?.['required']">Username is required</span>
+        <span *ngIf="username?.errors?.['minlength']">Username must be at least 3 characters</span>
+        <span *ngIf="username?.errors?.['maxlength']">Username must be no more than 20 characters</span>
+        <span *ngIf="username?.errors?.['pattern']">Username can only contain letters, numbers, hyphens, and underscores</span>
+      </div>
+      <div class="field-hint">3-20 characters, letters, numbers, hyphens, and underscores only</div>
+    </div>
+
+    <!-- Display Name Field -->
+    <div class="form-group">
+      <label for="displayName" class="form-label">Display Name</label>
+      <input
+        type="text"
+        id="displayName"
+        formControlName="displayName"
+        class="form-input"
+        [class.error]="displayName?.invalid && displayName?.touched"
+        placeholder="How you'll appear to others (optional)"
+      />
+      <div class="error-message" *ngIf="displayName?.invalid && displayName?.touched">
+        <span *ngIf="displayName?.errors?.['maxlength']">Display name must be no more than 30 characters</span>
+      </div>
+      <div class="field-hint">Leave blank to use your username</div>
+    </div>
+
+    <!-- Email Field -->
+    <div class="form-group">
+      <label for="email" class="form-label">Email</label>
+      <input
+        type="email"
+        id="email"
+        formControlName="email"
+        class="form-input"
+        [class.error]="email?.invalid && email?.touched"
+        placeholder="your@email.com (optional)"
+      />
+      <div class="error-message" *ngIf="email?.invalid && email?.touched">
+        <span *ngIf="email?.errors?.['email']">Please enter a valid email address</span>
+      </div>
+      <div class="field-hint">Optional - for account recovery</div>
+    </div>
+
+    <!-- Submit Button -->
+    <button
+      type="submit"
+      class="registration-button"
+      [disabled]="isLoading || successMessage"
+      [class.loading]="isLoading"
+    >
+      <span *ngIf="!isLoading && !successMessage">Create Account</span>
+      <span *ngIf="isLoading">Creating Account...</span>
+      <span *ngIf="successMessage">✓ Account Created</span>
+    </button>
+
+    <!-- Footer -->
+    <div class="form-footer">
+      <p class="login-link">
+        Already have an account? 
+        <a routerLink="/" class="link">Login here</a>
+      </p>
+    </div>
+  </form>
+</div>

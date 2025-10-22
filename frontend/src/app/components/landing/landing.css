@@ -30,6 +30,8 @@
 .footer-links a:hover {
   opacity: 1;
   text-decoration: underline;
+}
+
 .landing-footer {
   margin-top: 30px;
 }
