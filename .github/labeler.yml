@@ -1,0 +1,36 @@
+---
+# Configuration for actions/labeler
+# Automatically labels PRs based on which files are changed
+
+frontend:
+  - changed-files:
+      - any-glob-to-any-file: 'frontend/**'
+
+backend:
+  - changed-files:
+      - any-glob-to-any-file: 'backend/**'
+
+selenium:
+  - changed-files:
+      - any-glob-to-any-file: 'selenium/**'
+
+server:
+  - changed-files:
+      - any-glob-to-any-file: 'server/**'
+
+ci:
+  - changed-files:
+      - any-glob-to-any-file: '.github/workflows/**'
+
+docker:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'docker-compose.yml'
+          - '**/Dockerfile'
+          - '**/.dockerignore'
+
+documentation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '*.md'
+          - 'docs/**'
