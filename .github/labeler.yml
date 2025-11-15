@@ -1,0 +1,86 @@
+---
+# Configuration for actions/labeler
+# Automatically labels PRs based on which files are changed
+
+frontend:
+  - changed-files:
+      - any-glob-to-any-file: 'frontend/**'
+
+backend:
+  - changed-files:
+      - any-glob-to-any-file: 'backend/**'
+
+selenium:
+  - changed-files:
+      - any-glob-to-any-file: 'selenium/**'
+
+server:
+  - changed-files:
+      - any-glob-to-any-file: 'server/**'
+
+ci:
+  - changed-files:
+      - any-glob-to-any-file: '.github/workflows/**'
+
+docker:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'docker-compose.yml'
+          - '**/Dockerfile'
+          - '**/.dockerignore'
+
+documentation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '*.md'
+          - 'docs/**'
+
+dependencies:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '**/package.json'
+          - '**/package-lock.json'
+          - '**/go.mod'
+          - '**/go.sum'
+
+tests:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '**/*.test.js'
+          - '**/*.test.ts'
+          - '**/*.spec.js'
+          - '**/*.spec.ts'
+          - '**/__tests__/**'
+
+configuration:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '**/*.config.js'
+          - '**/*.config.ts'
+          - '**/tsconfig*.json'
+          - '**/angular.json'
+          - '**/.prettierrc'
+          - '**/.eslintrc*'
+          - '**/.env.example'
+          - '.vscode/**'
+          - '.copilot/**'
+
+github-actions:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '.github/workflows/**'
+          - '.github/actions/**'
+
+database:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '**/migrations/**'
+          - '**/*.sql'
+          - '**/db.js'
+          - '**/database/**'
+
+deployment:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '.github/workflows/aws-publish.yml'
+          - '**/GAMELIFT_INTEGRATION.md'
