@@ -10,7 +10,7 @@
     "migrate-down": "node-pg-migrate down"
   },
   "dependencies": {
-    "cors": "^2.8.5",
+    "cors": "^2.8.6",
     "express": "^5.2.1",
     "pg": "^8.17.2",
     "winston": "^3.19.0",
