@@ -1,0 +1,41 @@
+{
+  "name": "7hand Frontend (Compose)",
+  "dockerComposeFile": [
+    "../../docker-compose.yml"
+  ],
+  "service": "frontend-dev",
+  "workspaceFolder": "/workspace",
+  "overrideCommand": true,
+  "postCreateCommand": "npm ci",
+  "forwardPorts": [4200],
+  "containerEnv": {
+    "CI": "false",
+    "CHOKIDAR_USEPOLLING": "true"
+  },
+  "mounts": [
+    "source=${localWorkspaceFolderBasename}-frontend-node_modules,target=/workspace/node_modules,type=volume"
+  ],
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "angular.ng-template",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "ms-vscode.vscode-typescript-next",
+        "GitHub.copilot",
+        "GitHub.copilot-chat"
+      ],
+      "settings": {
+        "git.autofetch": true,
+        "git.confirmSync": false,
+        "git.enableSmartCommit": true,
+        "git.postCommitCommand": "none"
+      }
+    }
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {
+      "version": "latest"
+    }
+  }
+}

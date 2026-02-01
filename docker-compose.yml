@@ -8,6 +8,24 @@ services:
     depends_on:
       - backend
 
+  frontend-dev:
+    build:
+      context: ./frontend
+      target: dev
+      dockerfile: Dockerfile
+    ports:
+      - "4200:4200"
+    depends_on:
+      - backend
+      - db
+    environment:
+      CI: "false"
+      CHOKIDAR_USEPOLLING: "true"
+    volumes:
+      - ./frontend:/workspace:cached
+      - frontend-node_modules:/workspace/node_modules
+    command: ["npm", "start", "--", "--host", "0.0.0.0", "--poll", "2000"]
+
   backend:
     build: ./backend
     ports:
@@ -30,8 +48,6 @@ services:
       POSTGRES_USER: ${DB_USER:-card-game}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
       POSTGRES_DB: ${DB_NAME:-card-game-db}
-    ports:
-      - "5432:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
 
@@ -82,3 +98,4 @@ services:
 
 volumes:
   db-data:
+  frontend-node_modules:

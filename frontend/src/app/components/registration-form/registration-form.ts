@@ -52,7 +52,7 @@ export class RegistrationForm {
           this.successMessage = `Account created successfully! Welcome, ${user.displayName}!`;
           // Store user info in localStorage for demo purposes
           localStorage.setItem('currentUser', JSON.stringify(user));
-          // Navigate to landing/home after 2 seconds
+          // Navigate to /register after 2 seconds
           setTimeout(() => {
             this.router.navigate(['/']);
           }, 2000);

@@ -5,5 +5,5 @@ import { Registration } from './components/registration/registration';
 export const routes: Routes = [
   { path: 'register', component: Registration },
   { path: 'privacy', component: Privacy },
-  { path: '', pathMatch: 'full', redirectTo: '' }
+  { path: '', pathMatch: 'full', redirectTo: 'register' }
 ];

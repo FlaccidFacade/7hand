@@ -4,13 +4,12 @@ import { CommonModule } from '@angular/common';
 import { HealthService } from './services/health.service';
 import { HeaderComponent } from './components/header/header.component';
 import { TableTop } from './components/table-top/table-top';
-import { Landing } from './components/landing/landing';
 import { RulesOverlay } from './components/rules-overlay/rules-overlay';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, HeaderComponent, TableTop, Landing, RulesOverlay, CommonModule],
+  imports: [RouterOutlet, HeaderComponent, TableTop, RulesOverlay, CommonModule],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })

@@ -35,23 +35,6 @@ describe('App', () => {
     expect(app).toBeTruthy();
   });
 
-  it('should render landing component by default', () => {
-    const fixture = TestBed.createComponent(App);
-    fixture.detectChanges();
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('app-landing')).not.toBeNull();
-    expect(compiled.querySelector('app-header')).toBeNull();
-  });
-
-  it('should render header component when showLogin is false', () => {
-    const fixture = TestBed.createComponent(App);
-    const app = fixture.componentInstance;
-    app.showLogin = false;
-    fixture.detectChanges();
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('app-header')).not.toBeNull();
-    expect(compiled.querySelector('app-landing')).toBeNull();
-  });
 
   it('should have showLogin property set to true by default', () => {
     const fixture = TestBed.createComponent(App);

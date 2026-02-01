@@ -1,0 +1,24 @@
+{
+  "name": "7hand Backend (Compose)",
+  "dockerComposeFile": ["../../docker-compose.yml"],
+  "service": "backend",
+  "workspaceFolder": "/app",
+  "overrideCommand": false,
+  "containerEnv": {
+    "NODE_ENV": "development"
+  },
+  "postCreateCommand": "npm ci",
+  "forwardPorts": [3000],
+  "mounts": [
+    "source=${localWorkspaceFolderBasename}-backend-node_modules,target=/app/node_modules,type=volume"
+  ],
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "ms-azuretools.vscode-docker"
+      ]
+    }
+  }
+}

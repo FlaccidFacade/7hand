@@ -1,11 +1,16 @@
 <div class="registration-container">
-  <div class="registration-content">
-    <div class="logo-container">
-      <app-logo></app-logo>
+  <div class="registration-split">
+    <div class="registration-content">
+      <div class="logo-container">
+        <app-logo></app-logo>
+      </div>
+      <app-registration-form></app-registration-form>
+      <div class="footer-links">
+        <a routerLink="/privacy">Privacy Policy</a>
+      </div>
     </div>
-    <app-registration-form></app-registration-form>
-    <div class="footer-links">
-      <a routerLink="/privacy">Privacy Policy</a>
+    <div class="rules-panel">
+      <app-rules-display></app-rules-display>
     </div>
   </div>
 </div>
