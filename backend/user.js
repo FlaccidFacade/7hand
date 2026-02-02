@@ -2,6 +2,7 @@
 
 const { v4: uuidv4 } = require('uuid');
 const { getPool } = require('./db');
+const { validateUsername, validateDisplayName } = require('./profanity-filter');
 
 class User {
   constructor(data) {
@@ -32,10 +33,22 @@ class User {
       errors.push('Username must be between 3 and 20 characters');
     } else if (!/^[a-zA-Z0-9_-]+$/.test(this.username)) {
       errors.push('Username can only contain letters, numbers, hyphens, and underscores');
+    } else {
+      // Check for profanity only if basic validation passes
+      const profanityCheck = validateUsername(this.username);
+      if (!profanityCheck.valid) {
+        errors.push(profanityCheck.error);
+      }
     }
 
     if (this.displayName && this.displayName.length > 30) {
       errors.push('Display name must be 30 characters or less');
+    } else if (this.displayName) {
+      // Check display name for profanity
+      const profanityCheck = validateDisplayName(this.displayName);
+      if (!profanityCheck.valid) {
+        errors.push(profanityCheck.error);
+      }
     }
 
     // Use a simpler email regex that's not vulnerable to ReDoS

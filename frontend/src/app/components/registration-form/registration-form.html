@@ -31,6 +31,7 @@
         <span *ngIf="username?.errors?.['minlength']">Username must be at least 3 characters</span>
         <span *ngIf="username?.errors?.['maxlength']">Username must be no more than 20 characters</span>
         <span *ngIf="username?.errors?.['pattern']">Username can only contain letters, numbers, hyphens, and underscores</span>
+        <span *ngIf="username?.errors?.['profanity']">Username contains inappropriate content</span>
       </div>
       <div class="field-hint">3-20 characters, letters, numbers, hyphens, and underscores only</div>
     </div>
@@ -48,6 +49,7 @@
       />
       <div class="error-message" *ngIf="displayName?.invalid && displayName?.touched">
         <span *ngIf="displayName?.errors?.['maxlength']">Display name must be no more than 30 characters</span>
+        <span *ngIf="displayName?.errors?.['profanity']">Display name contains inappropriate content</span>
       </div>
       <div class="field-hint">Leave blank to use your username</div>
     </div>

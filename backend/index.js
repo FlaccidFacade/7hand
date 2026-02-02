@@ -4,6 +4,7 @@ const { connect, disconnect } = require('./db');
 const { getHealthStatus } = require('./health');
 const { LobbyManager, saveLobbyToDb, removeLobbyFromDb, loadLobbyFromDb, cleanupInactiveLobbies } = require('./lobby');
 const { UserManager, saveUserToDb, removeUserFromDb, loadUserFromDb, loadUserByUsernameFromDb, loadAllUsersFromDb, updateUserActivity } = require('./user');
+const { SLUR_LIST, OBFUSCATION_PATTERNS } = require('./slur-list');
 const logger = require('./logger');
 const { execSync } = require('child_process');
 const app = express();
@@ -254,6 +255,16 @@ app.post('/api/user/:userId/activity', async (req, res) => {
   user.updateActivity();
   await updateUserActivity(userId);
   res.json({ success: true });
+});
+
+// Config endpoint - provides profanity filter rules to frontend
+app.get('/api/config/profanity-rules', (req, res) => {
+  // Return the slur list and patterns for client-side validation
+  // Frontend should mirror backend validation
+  res.json({
+    slurList: SLUR_LIST,
+    obfuscationPatterns: OBFUSCATION_PATTERNS.map(p => p.source)
+  });
 });
 
 process.on('SIGINT', async () => {

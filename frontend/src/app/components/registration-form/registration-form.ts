@@ -1,8 +1,9 @@
-import { Component } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, AbstractControl, ValidationErrors } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { UserService } from '../../services/user.service';
+import { ProfanityValidatorService } from '../../services/profanity-validator.service';
 
 @Component({
   selector: 'app-registration-form',
@@ -10,7 +11,7 @@ import { UserService } from '../../services/user.service';
   templateUrl: './registration-form.html',
   styleUrl: './registration-form.css'
 })
-export class RegistrationForm {
+export class RegistrationForm implements OnInit {
   registrationForm: FormGroup;
   isLoading = false;
   errorMessage = '';
@@ -19,7 +20,8 @@ export class RegistrationForm {
   constructor(
     private formBuilder: FormBuilder,
     private userService: UserService,
-    private router: Router
+    private router: Router,
+    private profanityValidator: ProfanityValidatorService
   ) {
     this.registrationForm = this.formBuilder.group({
       username: ['', [
@@ -31,6 +33,50 @@ export class RegistrationForm {
       displayName: ['', [Validators.maxLength(30)]],
       email: ['', [Validators.email]]
     });
+  }
+
+  ngOnInit(): void {
+    // Add profanity validators after rules are loaded
+    this.profanityValidator.getRules().subscribe(rules => {
+      if (rules) {
+        const usernameControl = this.registrationForm.get('username');
+        const displayNameControl = this.registrationForm.get('displayName');
+
+        // Add profanity validator to username
+        usernameControl?.setValidators([
+          Validators.required,
+          Validators.minLength(3),
+          Validators.maxLength(20),
+          Validators.pattern(/^[a-zA-Z0-9_-]+$/),
+          this.profanityValidatorFn('username')
+        ]);
+        usernameControl?.updateValueAndValidity({ emitEvent: false });
+
+        // Add profanity validator to display name
+        displayNameControl?.setValidators([
+          Validators.maxLength(30),
+          this.profanityValidatorFn('displayName')
+        ]);
+        displayNameControl?.updateValueAndValidity({ emitEvent: false });
+      }
+    });
+  }
+
+  /**
+   * Custom validator function for profanity checking
+   */
+  private profanityValidatorFn(fieldName: 'username' | 'displayName') {
+    return (control: AbstractControl): ValidationErrors | null => {
+      if (!control.value) {
+        return null;
+      }
+
+      const validationResult = fieldName === 'username'
+        ? this.profanityValidator.validateUsername(control.value)
+        : this.profanityValidator.validateDisplayName(control.value);
+
+      return validationResult.valid ? null : { profanity: true };
+    };
   }
 
   onSubmit(): void {
