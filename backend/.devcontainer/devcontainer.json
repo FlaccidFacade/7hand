@@ -17,7 +17,10 @@
       "extensions": [
         "dbaeumer.vscode-eslint",
         "esbenp.prettier-vscode",
-        "ms-azuretools.vscode-docker"
+        "ms-azuretools.vscode-docker",
+         "ms-vscode.vscode-typescript-next",
+        "GitHub.copilot",
+        "GitHub.copilot-chat"
       ]
     }
   }
