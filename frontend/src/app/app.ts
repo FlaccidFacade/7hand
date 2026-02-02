@@ -5,11 +5,12 @@ import { HealthService } from './services/health.service';
 import { HeaderComponent } from './components/header/header.component';
 import { TableTop } from './components/table-top/table-top';
 import { RulesOverlay } from './components/rules-overlay/rules-overlay';
+import { CookieConsent } from './components/cookie-consent/cookie-consent';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, HeaderComponent, TableTop, RulesOverlay, CommonModule],
+  imports: [RouterOutlet, HeaderComponent, TableTop, RulesOverlay, CookieConsent, CommonModule],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })

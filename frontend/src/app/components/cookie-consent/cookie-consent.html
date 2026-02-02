@@ -1,0 +1,97 @@
+<div class="cookie-consent-overlay" *ngIf="showBanner">
+  <div class="cookie-consent-modal">
+    <div class="cookie-header">
+      <h2>🍪 We Value Your Privacy</h2>
+    </div>
+    
+    <div class="cookie-content">
+      <p>
+        We use cookies and similar technologies to improve your experience, analyze site usage, 
+        and deliver personalized advertising through Google AdSense.
+      </p>
+      <p>
+        By clicking "Accept All", you consent to our use of cookies for analytics, advertising, 
+        and personalized content. You can customize your preferences or reject non-essential cookies.
+      </p>
+      <p class="privacy-link-text">
+        For more details, see our <a routerLink="/privacy-policy" (click)="showBanner = false">Privacy Policy</a> 
+        and <a routerLink="/terms" (click)="showBanner = false">Terms of Service</a>.
+      </p>
+    </div>
+
+    <div class="cookie-actions">
+      <button class="btn-accept-all" (click)="acceptAll()">Accept All</button>
+      <button class="btn-reject" (click)="rejectAll()">Reject All</button>
+      <button class="btn-settings" (click)="openSettings()">Customize</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="cookie-settings-overlay" *ngIf="showSettings">
+  <div class="cookie-settings-modal">
+    <div class="settings-header">
+      <h2>Cookie Preferences</h2>
+      <button class="close-btn" (click)="closeSettings()">&times;</button>
+    </div>
+
+    <div class="settings-content">
+      <div class="cookie-category">
+        <div class="category-header">
+          <div>
+            <h3>Essential Cookies</h3>
+            <p>Required for the website to function properly. Cannot be disabled.</p>
+          </div>
+          <label class="toggle-switch disabled">
+            <input type="checkbox" [checked]="preferences.essential" disabled>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="cookie-category">
+        <div class="category-header">
+          <div>
+            <h3>Analytics Cookies</h3>
+            <p>Help us understand how visitors interact with our website by collecting and reporting information.</p>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" [(ngModel)]="preferences.analytics">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="cookie-category">
+        <div class="category-header">
+          <div>
+            <h3>Advertising Cookies</h3>
+            <p>Used to deliver ads and measure ad performance through Google AdSense.</p>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" [(ngModel)]="preferences.advertising">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="cookie-category">
+        <div class="category-header">
+          <div>
+            <h3>Personalized Advertising</h3>
+            <p>Allow Google AdSense to show ads based on your interests and browsing behavior.</p>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" [(ngModel)]="preferences.personalized">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-actions">
+      <button class="btn-save" (click)="savePreferences()">Save Preferences</button>
+      <button class="btn-cancel" (click)="closeSettings()">Cancel</button>
+    </div>
+  </div>
+</div>
