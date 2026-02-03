@@ -20,10 +20,10 @@ export class AdsenseService {
    * Ad slot configurations for different positions
    */
   private adSlots = {
-    sidebarLeft: '1234567890',    // Replace with your actual ad slot ID
-    sidebarRight: '0987654321',   // Replace with your actual ad slot ID
-    banner: '1122334455',          // Replace with your actual ad slot ID
-    inContent: '5544332211'        // Replace with your actual ad slot ID
+    sidebarLeft: '1234567890',    // Replace with your actual ad slot ID (Desktop sidebar)
+    sidebarRight: '0987654321',   // Replace with your actual ad slot ID (Desktop sidebar)
+    banner: '1122334455',          // Replace with your actual ad slot ID (Mobile popup)
+    inContent: '5544332211'        // Replace with your actual ad slot ID (In-content ads)
   };
 
   constructor() {

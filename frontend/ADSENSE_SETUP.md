@@ -65,6 +65,7 @@ While the component loads scripts dynamically, you can also add it to `index.htm
 ### With Service
 
 ```html
+<!-- Desktop Sidebar Ad -->
 <app-google-adsense
   [adClient]="adsenseService.getConfig().adClient"
   [adSlot]="adsenseService.getAdSlot('sidebarLeft')"
@@ -72,6 +73,22 @@ While the component loads scripts dynamically, you can also add it to `index.htm
   [adTest]="adsenseService.isTestMode() ? 'on' : 'off'">
 </app-google-adsense>
 ```
+
+### Mobile Popup Ad
+
+The mobile popup ad component is automatically included in the app and requires no additional configuration:
+
+```html
+<!-- Add to your app.html -->
+<mobile-popup-ad></mobile-popup-ad>
+```
+
+**Features:**
+- Automatically shows only on mobile/tablet (<1024px)
+- 5-second delay before appearing
+- Once per session (won't annoy users)
+- Respects cookie consent
+- Configurable through AdsenseService
 
 ## Component Properties
 
@@ -95,12 +112,25 @@ While the component loads scripts dynamically, you can also add it to `index.htm
 The app currently has:
 - **Left Sidebar Ad**: Vertical ad unit on the left side (visible on screens ≥1440px)
 - **Right Sidebar Ad**: Vertical ad unit on the right side (visible on screens ≥1440px)
+- **Mobile Popup Ad**: Pop-up advertisement with close button (visible on screens <1024px)
 
-Both ads:
+### Desktop Ads (Sidebars)
+Both sidebar ads:
 - Only show when users consent to advertising cookies
 - Sticky positioning for better visibility
 - Automatically disabled on mobile/tablet devices
 - Test mode enabled by default (change in production)
+
+### Mobile Popup Ad
+The mobile popup ad:
+- ✅ Only appears on mobile/tablet screens (<1024px)
+- ✅ Shows after 5-second delay (non-intrusive)
+- ✅ Only displays once per session
+- ✅ Requires advertising cookie consent
+- ✅ Has prominent X-close button
+- ✅ Can be closed by clicking backdrop
+- ✅ Beautiful slide-up animation
+- ✅ Responsive to orientation changes
 
 ## Testing
 
