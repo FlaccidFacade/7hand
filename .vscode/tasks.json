@@ -29,6 +29,14 @@
 			"command": "docker compose up -d db && docker compose run --rm -e DATABASE_URL=postgres://cardgame:cardgamepass@db:5432/cardgamedb backend npm run migrate && docker compose run --rm -e DATABASE_URL=postgres://cardgame:cardgamepass@db:5432/cardgamedb backend npm test",
 			"group": "test",
 			"problemMatcher": []
+		},
+		{
+			"type": "shell",
+			"label": "stop-dev-network",
+			"command": "docker compose down",
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "none"
 		}
 	]
 }
