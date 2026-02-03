@@ -23,10 +23,6 @@
   flex-direction: column;
   gap: 20px;
   flex-shrink: 0;
-  position: sticky;
-  top: 50%;
-  transform: translateY(-50%);
-  align-self: flex-start;
 }
 
 .rules-panel {
@@ -73,6 +69,10 @@
 
   .registration-content {
     flex: 0 0 auto;
+    position: sticky;
+    top: 50%;
+    transform: translateY(-50%);
+    align-self: flex-start;
   }
 }
 
