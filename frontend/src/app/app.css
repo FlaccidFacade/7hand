@@ -1,0 +1,46 @@
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+}
+
+.main-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.ad-card {
+  width: 10%;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  display: none;
+  flex-shrink: 0;
+}
+
+.ad-placeholder {
+  position: sticky;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 1%;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.ad-placeholder p {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  margin: 0;
+}
+
+/* Show ads on larger screens only */
+@media (min-width: 1440px) {
+  .ad-card {
+    display: block;
+  }
+}
+
