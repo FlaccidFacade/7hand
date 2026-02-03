@@ -3,8 +3,24 @@
 	"tasks": [
 		{
 			"type": "shell",
+			"label": "start-dev-network",
+			"command": "docker compose up --build frontend-dev backend db",
+			"isBackground": true,
+			"problemMatcher": [],
+			"group": "none"
+		},
+		{
+			"type": "shell",
+			"label": "run-selenium-tests",
+			"command": "docker compose up --build --exit-code-from test-runner",
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "test"
+		},
+		{
+			"type": "shell",
 			"label": "rebuild-backend-no-cache",
-			"command": "dc build --no-cache backend",
+			"command": "docker compose build --no-cache backend",
 			"group": "build"
 		},
 		{

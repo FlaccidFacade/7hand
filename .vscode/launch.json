@@ -1,18 +1,21 @@
 {
   "version": "0.2.0",
   "configurations": [
- 
     {
+      "name": "Start Dev Network",
       "type": "node",
       "request": "launch",
-      "name": "Run Selenium Test with dc",
-      "runtimeExecutable": "sh",
-      "runtimeArgs": [
-        "-c",
-        "dc up --build --exit-code-from test-runner"
-      ],
-      "cwd": "${workspaceFolder}",
-      "console": "integratedTerminal"
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "preLaunchTask": "start-dev-network"
+    },
+    {
+      "name": "Run Selenium Tests",
+      "type": "node",
+      "request": "launch",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "preLaunchTask": "run-selenium-tests"
     }
   ],
   "compounds": [

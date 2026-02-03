@@ -1,16 +1,16 @@
 # Build stage
-# FROM node:20-alpine as build
-# WORKDIR /app
-# COPY package*.json ./
-# RUN npm install -g @angular/cli && npm install
-# COPY . .
-# RUN npm run build -- --configuration production
+FROM node:20-alpine as build
+WORKDIR /app
+COPY package*.json ./
+RUN npm install -g @angular/cli && npm install
+COPY . .
+RUN npm run build -- --configuration production
 
 # Development stage
 FROM node:20-slim as dev
 WORKDIR /workspace
-COPY --from=build /app/node_modules /workspace/node_modules
-RUN npm install -g @angular/cli
+COPY package*.json ./
+RUN npm install -g @angular/cli && npm install
 EXPOSE 4200
 CMD ["npm", "start"]
 
