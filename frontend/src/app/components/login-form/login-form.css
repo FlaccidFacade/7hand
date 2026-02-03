@@ -2,26 +2,21 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 400px;
-  padding: 5px;
 }
 
 .login-form {
   background: white;
-  padding: 40px;
-  border-radius: 12px;
+  padding: 2%;
+  border-radius: 3%;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   width: 100%;
-  max-width: 400px;
-  border: 1px solid #e0e0e0;
 }
 
 .login-title {
   text-align: center;
-  margin-bottom: 30px;
-  color: #2c3e50;
-  font-size: 24px;
-  font-weight: 600;
+  color: #2d3748;
+  font-size: 28px;
+  font-weight: 700;
 }
 
 .form-group {
@@ -30,10 +25,10 @@
 
 .form-label {
   display: block;
-  margin-bottom: 8px;
-  color: #34495e;
-  font-weight: 500;
+  margin-bottom: 6px;
   font-size: 14px;
+  font-weight: 600;
+  color: #4a5568;
 }
 
 .form-input {
@@ -46,43 +41,51 @@
   box-sizing: border-box;
 }
 
+
 .form-input:focus {
   outline: none;
-  border-color: #3498db;
-  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
 .form-input.error {
-  border-color: #e74c3c;
+  border-color: #e53e3e;
 }
 
 .form-input.error:focus {
-  box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1);
+  box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.1);
 }
 
 .error-message {
   margin-top: 6px;
-  color: #e74c3c;
-  font-size: 14px;
+  font-size: 13px;
+  color: #e53e3e;
+  display: flex;
+  align-items: center;
+}
+
+.error-message span::before {
+  content: '⚠ ';
+  margin-right: 4px;
 }
 
 .login-button {
   width: 100%;
   padding: 14px;
-  background: linear-gradient(135deg, #3498db, #2980b9);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
   border-radius: 8px;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.3s ease, transform 0.2s ease;
-  margin-top: 10px;
+  transition: all 0.2s ease;
+  margin-top: 8px;
 }
 
 .login-button:hover:not(:disabled) {
-  background: linear-gradient(135deg, #2980b9, #21618c);
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
 
 .login-button:disabled {
@@ -110,28 +113,27 @@
 .register-link {
   margin: 0;
   font-size: 14px;
-  color: #34495e;
+  color: #718096;
 }
 
 .link {
-  color: #3498db;
+  color: #667eea;
   text-decoration: none;
   font-weight: 600;
   transition: color 0.2s ease;
 }
 
 .link:hover {
-  color: #2980b9;
+  color: #764ba2;
   text-decoration: underline;
 }
 
 @media (max-width: 480px) {
   .login-form {
-    padding: 30px 20px;
-    margin: 10px;
+    padding: 30px 24px;
   }
   
   .login-title {
-    font-size: 20px;
+    font-size: 24px;
   }
 }

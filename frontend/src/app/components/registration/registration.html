@@ -2,7 +2,8 @@
   <div class="registration-split">
     <div class="registration-content">
       
-      <app-registration-form></app-registration-form>
+      <app-registration-form *ngIf="!showLogin" (loginClick)="onShowLogin()"></app-registration-form>
+      <app-login-form *ngIf="showLogin" (registerClick)="onShowRegister()"></app-login-form>
       <div class="footer-links">
         <a routerLink="/privacy">Privacy Policy</a>
       </div>

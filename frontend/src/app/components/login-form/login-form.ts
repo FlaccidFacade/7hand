@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, Output, EventEmitter } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
@@ -10,6 +10,8 @@ import { RouterLink } from '@angular/router';
   styleUrl: './login-form.css'
 })
 export class LoginForm {
+  @Output() registerClick = new EventEmitter<void>();
+  
   loginForm: FormGroup;
   isLoading = false;
 
@@ -47,5 +49,10 @@ export class LoginForm {
 
   get password() {
     return this.loginForm.get('password');
+  }
+
+  onRegisterClick(event: Event): void {
+    event.preventDefault();
+    this.registerClick.emit();
   }
 }

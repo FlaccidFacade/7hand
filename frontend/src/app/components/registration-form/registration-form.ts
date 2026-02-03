@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Output, EventEmitter } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, AbstractControl, ValidationErrors } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
@@ -12,6 +12,8 @@ import { ProfanityValidatorService } from '../../services/profanity-validator.se
   styleUrl: './registration-form.css'
 })
 export class RegistrationForm implements OnInit {
+  @Output() loginClick = new EventEmitter<void>();
+  
   registrationForm: FormGroup;
   isLoading = false;
   errorMessage = '';
@@ -137,5 +139,10 @@ export class RegistrationForm implements OnInit {
 
   get email() {
     return this.registrationForm.get('email');
+  }
+
+  onLoginClick(event: Event): void {
+    event.preventDefault();
+    this.loginClick.emit();
   }
 }
