@@ -7,7 +7,10 @@
 			"command": "docker compose up --build frontend-dev backend db",
 			"isBackground": true,
 			"problemMatcher": [],
-			"group": "none"
+			"group": "none",
+			"runOptions": {
+				"runOn": "folderOpen"
+			}
 		},
 		{
 			"type": "shell",
