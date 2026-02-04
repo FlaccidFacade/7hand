@@ -4,6 +4,20 @@
   padding: 40px 20px;
 }
 
+.back-button {
+  display: inline-block;
+  color: #0984e3;
+  text-decoration: none;
+  font-size: 1rem;
+  font-weight: 500;
+  margin-bottom: 20px;
+  transition: color 0.3s ease;
+}
+
+.back-button:hover {
+  color: #74b9ff;
+}
+
 .privacy-content {
   max-width: 900px;
   margin: 0 auto;

@@ -10,6 +10,7 @@ class User {
     this.username = data.username;
     this.displayName = data.displayName || data.username;
     this.email = data.email || null;
+    this.lobbyId = data.lobbyId || null;
     this.createdAt = data.createdAt || new Date();
     this.updatedAt = data.updatedAt || new Date();
     this.lastActive = data.lastActive || new Date();
@@ -18,6 +19,7 @@ class User {
       gamesWon: 0,
       gamesLost: 0
     };
+    this.cookieConsent = data.cookieConsent || null;
   }
 
   /**
@@ -76,6 +78,15 @@ class User {
    */
   updateStats(stats) {
     this.stats = { ...this.stats, ...stats };
+    this.updatedAt = new Date();
+  }
+
+  /**
+   * Updates cookie consent preferences
+   * @param {Object} consent - Cookie consent preferences
+   */
+  updateCookieConsent(consent) {
+    this.cookieConsent = consent;
     this.updatedAt = new Date();
   }
 
@@ -182,15 +193,16 @@ async function saveUserToDb(user) {
   const pool = getPool();
   const now = new Date();
   await pool.query(
-    `INSERT INTO users (id, username, display_name, email, created_at, updated_at, last_active, stats)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    `INSERT INTO users (id, username, display_name, email, created_at, updated_at, last_active, stats, cookie_consent)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
      ON CONFLICT (id) DO UPDATE SET
        username = EXCLUDED.username,
        display_name = EXCLUDED.display_name,
        email = EXCLUDED.email,
        updated_at = EXCLUDED.updated_at,
        last_active = EXCLUDED.last_active,
-       stats = EXCLUDED.stats`,
+       stats = EXCLUDED.stats,
+       cookie_consent = EXCLUDED.cookie_consent`,
     [
       user.id,
       user.username,
@@ -199,7 +211,8 @@ async function saveUserToDb(user) {
       user.createdAt || now,
       user.updatedAt || now,
       user.lastActive || now,
-      JSON.stringify(user.stats)
+      JSON.stringify(user.stats),
+      user.cookieConsent ? JSON.stringify(user.cookieConsent) : null
     ]
   );
 }

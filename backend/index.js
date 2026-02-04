@@ -10,7 +10,7 @@ const { execSync } = require('child_process');
 const app = express();
 const PORT = 3000;
 
-app.use(cors({ origin: 'http://localhost', credentials: true }));
+app.use(cors({ origin: ['http://localhost', 'http://localhost:4200', 'http://localhost:80'], credentials: true }));
 app.use(express.json());
 
 const lobbyManager = new LobbyManager();
@@ -255,6 +255,45 @@ app.post('/api/user/:userId/activity', async (req, res) => {
   user.updateActivity();
   await updateUserActivity(userId);
   res.json({ success: true });
+});
+
+app.patch('/api/user/:userId/cookie-consent', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { cookieConsent } = req.body;
+    
+    const user = userManager.getUser(userId);
+    if (!user) {
+      // Try to load from DB
+      const dbUser = await loadUserFromDb(userId);
+      if (!dbUser) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      const loadedUser = userManager.createUser({
+        id: dbUser.id,
+        username: dbUser.username,
+        displayName: dbUser.display_name,
+        email: dbUser.email,
+        createdAt: dbUser.created_at,
+        updatedAt: dbUser.updated_at,
+        lastActive: dbUser.last_active,
+        stats: dbUser.stats,
+        cookieConsent: dbUser.cookie_consent
+      });
+      loadedUser.updateCookieConsent(cookieConsent);
+      await saveUserToDb(loadedUser);
+      logger.info(`Cookie consent updated for user ${userId}`);
+      return res.json({ success: true, cookieConsent: loadedUser.cookieConsent });
+    }
+    
+    user.updateCookieConsent(cookieConsent);
+    await saveUserToDb(user);
+    logger.info(`Cookie consent updated for user ${userId}`);
+    res.json({ success: true, cookieConsent: user.cookieConsent });
+  } catch (error) {
+    logger.error('Error updating cookie consent', error);
+    res.status(500).json({ error: 'Failed to update cookie consent' });
+  }
 });
 
 // Config endpoint - provides profanity filter rules to frontend

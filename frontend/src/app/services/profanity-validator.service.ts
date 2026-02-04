@@ -20,7 +20,7 @@ interface ValidationResult {
   providedIn: 'root'
 })
 export class ProfanityValidatorService {
-  private apiUrl = 'http://localhost:3000/api';
+  private apiUrl = '/api';
   private rules$ = new BehaviorSubject<ProfanityRules | null>(null);
 
   constructor(private http: HttpClient) {

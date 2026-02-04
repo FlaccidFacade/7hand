@@ -8,6 +8,16 @@ export interface UserStats {
   gamesLost: number;
 }
 
+export interface CookieConsent {
+  timestamp: string;
+  preferences: {
+    essential: boolean;
+    analytics: boolean;
+    advertising: boolean;
+    personalized: boolean;
+  };
+}
+
 export interface User {
   id: string;
   username: string;
@@ -15,6 +25,7 @@ export interface User {
   stats: UserStats;
   createdAt: string;
   lastActive: string;
+  cookieConsent?: CookieConsent;
 }
 
 export interface CreateUserRequest {
@@ -82,5 +93,12 @@ export class UserService {
    */
   updateUserActivity(userId: string): Observable<{ success: boolean }> {
     return this.http.post<{ success: boolean }>(`${this.apiUrl}/${userId}/activity`, {});
+  }
+
+  /**
+   * Update user cookie consent preferences
+   */
+  updateCookieConsent(userId: string, cookieConsent: CookieConsent): Observable<{ success: boolean; cookieConsent: CookieConsent }> {
+    return this.http.patch<{ success: boolean; cookieConsent: CookieConsent }>(`${this.apiUrl}/${userId}/cookie-consent`, { cookieConsent });
   }
 }
