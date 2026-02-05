@@ -32,6 +32,10 @@
       </div>
     </div>
 
+    <div class="error-message general-error" *ngIf="errorMessage">
+      {{ errorMessage }}
+    </div>
+
     <button
       type="submit"
       class="login-button"

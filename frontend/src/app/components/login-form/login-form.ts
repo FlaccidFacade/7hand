@@ -1,6 +1,7 @@
 import { Component, Output, EventEmitter } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-login-form',
@@ -10,11 +11,16 @@ import { CommonModule } from '@angular/common';
 })
 export class LoginForm {
   @Output() registerClick = new EventEmitter<void>();
+  @Output() loginSuccess = new EventEmitter<void>();
   
   loginForm: FormGroup;
   isLoading = false;
+  errorMessage = '';
 
-  constructor(private formBuilder: FormBuilder) {
+  constructor(
+    private formBuilder: FormBuilder,
+    private authService: AuthService
+  ) {
     this.loginForm = this.formBuilder.group({
       username: ['', [Validators.required, Validators.minLength(3)]],
       password: ['', [Validators.required, Validators.minLength(6)]]
@@ -24,12 +30,22 @@ export class LoginForm {
   onSubmit(): void {
     if (this.loginForm.valid) {
       this.isLoading = true;
-      // Simulate login process
-      setTimeout(() => {
-        console.log('Login attempt:', this.loginForm.value);
-        this.isLoading = false;
-        // In a real app, this would call an authentication service
-      }, 1500);
+      this.errorMessage = '';
+      
+      this.authService.login(this.loginForm.value).subscribe({
+        next: (response) => {
+          this.isLoading = false;
+          if (response.success) {
+            console.log('Login successful:', response.user);
+            this.loginSuccess.emit();
+          }
+        },
+        error: (error) => {
+          this.isLoading = false;
+          this.errorMessage = error.error?.error || 'Login failed. Please try again.';
+          console.error('Login error:', error);
+        }
+      });
     } else {
       this.markFormGroupTouched();
     }

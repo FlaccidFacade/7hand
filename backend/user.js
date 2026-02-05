@@ -1,6 +1,7 @@
 // user.js - Handles user creation and management
 
 const { v4: uuidv4 } = require('uuid');
+const bcrypt = require('bcrypt');
 const { getPool } = require('./db');
 const { validateUsername, validateDisplayName } = require('./profanity-filter');
 
@@ -10,6 +11,8 @@ class User {
     this.username = data.username;
     this.displayName = data.displayName || data.username;
     this.email = data.email || null;
+    this.password = data.password || null; // Plain text password (only during creation/update)
+    this.passwordHash = data.passwordHash || null; // Stored hash
     this.lobbyId = data.lobbyId || null;
     this.createdAt = data.createdAt || new Date();
     this.updatedAt = data.updatedAt || new Date();
@@ -88,6 +91,27 @@ class User {
   updateCookieConsent(consent) {
     this.cookieConsent = consent;
     this.updatedAt = new Date();
+  }
+
+  /**
+   * Hashes the password
+   * @returns {Promise<void>}
+   */
+  async hashPassword() {
+    if (this.password) {
+      this.passwordHash = await bcrypt.hash(this.password, 10);
+      this.password = null; // Clear plain text password
+    }
+  }
+
+  /**
+   * Verifies password against stored hash
+   * @param {string} password - Plain text password to verify
+   * @returns {Promise<boolean>}
+   */
+  async verifyPassword(password) {
+    if (!this.passwordHash) return false;
+    return await bcrypt.compare(password, this.passwordHash);
   }
 
   /**
@@ -192,9 +216,15 @@ class UserManager {
 async function saveUserToDb(user) {
   const pool = getPool();
   const now = new Date();
+  
+  // Hash password if needed
+  if (user.password) {
+    await user.hashPassword();
+  }
+  
   await pool.query(
-    `INSERT INTO users (id, username, display_name, email, created_at, updated_at, last_active, stats, cookie_consent)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+    `INSERT INTO users (id, username, display_name, email, created_at, updated_at, last_active, stats, cookie_consent, password_hash)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
      ON CONFLICT (id) DO UPDATE SET
        username = EXCLUDED.username,
        display_name = EXCLUDED.display_name,
@@ -202,7 +232,8 @@ async function saveUserToDb(user) {
        updated_at = EXCLUDED.updated_at,
        last_active = EXCLUDED.last_active,
        stats = EXCLUDED.stats,
-       cookie_consent = EXCLUDED.cookie_consent`,
+       cookie_consent = EXCLUDED.cookie_consent,
+       password_hash = EXCLUDED.password_hash`,
     [
       user.id,
       user.username,
@@ -212,7 +243,8 @@ async function saveUserToDb(user) {
       user.updatedAt || now,
       user.lastActive || now,
       JSON.stringify(user.stats),
-      user.cookieConsent ? JSON.stringify(user.cookieConsent) : null
+      user.cookieConsent ? JSON.stringify(user.cookieConsent) : null,
+      user.passwordHash
     ]
   );
 }

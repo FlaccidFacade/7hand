@@ -69,6 +69,16 @@
   margin-right: 4px;
 }
 
+.general-error {
+  background-color: #fee;
+  border: 1px solid #e53e3e;
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 16px;
+  text-align: center;
+  font-weight: 500;
+}
+
 .login-button {
   width: 100%;
   padding: 14px;
