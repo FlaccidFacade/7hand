@@ -18,14 +18,25 @@
     </div>
 
     <div class="form-group">
-      <input
-        type="password"
-        id="password"
-        formControlName="password"
-        class="form-input"
-        [class.error]="password?.invalid && password?.touched"
-        placeholder="Enter your password"
-      />
+      <div class="password-input-container">
+        <input
+          [type]="showPassword ? 'text' : 'password'"
+          id="password"
+          formControlName="password"
+          class="form-input password-input"
+          [class.error]="password?.invalid && password?.touched"
+          placeholder="Enter your password"
+        />
+        <button
+          type="button"
+          class="password-toggle"
+          (click)="togglePasswordVisibility()"
+          aria-label="Toggle password visibility"
+        >
+          <span *ngIf="!showPassword">👁️</span>
+          <span *ngIf="showPassword">🙈</span>
+        </button>
+      </div>
       <div class="error-message" *ngIf="password?.invalid && password?.touched">
         <span *ngIf="password?.errors?.['required']">Password is required</span>
         <span *ngIf="password?.errors?.['minlength']">Password must be at least 6 characters</span>

@@ -16,6 +16,7 @@ export class LoginForm {
   loginForm: FormGroup;
   isLoading = false;
   errorMessage = '';
+  showPassword = false;
 
   constructor(
     private formBuilder: FormBuilder,
@@ -64,6 +65,10 @@ export class LoginForm {
 
   get password() {
     return this.loginForm.get('password');
+  }
+
+  togglePasswordVisibility(): void {
+    this.showPassword = !this.showPassword;
   }
 
   onRegisterClick(event: Event): void {

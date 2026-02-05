@@ -18,6 +18,7 @@ export class RegistrationForm implements OnInit {
   isLoading = false;
   errorMessage = '';
   successMessage = '';
+  showPassword = false;
 
   constructor(
     private formBuilder: FormBuilder,
@@ -37,9 +38,8 @@ export class RegistrationForm implements OnInit {
       password: ['', [
         Validators.required,
         Validators.minLength(8)
-      ]],
-      confirmPassword: ['', [Validators.required]]
-    }, { validators: this.passwordMatchValidator });
+      ]]
+    });
   }
 
   ngOnInit(): void {
@@ -69,19 +69,7 @@ export class RegistrationForm implements OnInit {
     });
   }
 
-  /**
-   * Validator to check if password and confirmPassword match
-   */
-  private passwordMatchValidator(control: AbstractControl): ValidationErrors | null {
-    const password = control.get('password');
-    const confirmPassword = control.get('confirmPassword');
 
-    if (!password || !confirmPassword) {
-      return null;
-    }
-
-    return password.value === confirmPassword.value ? null : { passwordMismatch: true };
-  }
 
   /**
    * Custom validator function for profanity checking
@@ -165,8 +153,8 @@ export class RegistrationForm implements OnInit {
     return this.registrationForm.get('password');
   }
 
-  get confirmPassword() {
-    return this.registrationForm.get('confirmPassword');
+  togglePasswordVisibility(): void {
+    this.showPassword = !this.showPassword;
   }
 
   onLoginClick(event: Event): void {
