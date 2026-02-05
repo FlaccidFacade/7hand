@@ -22,7 +22,6 @@ class User {
       gamesWon: 0,
       gamesLost: 0
     };
-    this.cookieConsent = data.cookieConsent || null;
   }
 
   /**
@@ -81,15 +80,6 @@ class User {
    */
   updateStats(stats) {
     this.stats = { ...this.stats, ...stats };
-    this.updatedAt = new Date();
-  }
-
-  /**
-   * Updates cookie consent preferences
-   * @param {Object} consent - Cookie consent preferences
-   */
-  updateCookieConsent(consent) {
-    this.cookieConsent = consent;
     this.updatedAt = new Date();
   }
 
@@ -223,8 +213,8 @@ async function saveUserToDb(user) {
   }
   
   await pool.query(
-    `INSERT INTO users (id, username, display_name, email, created_at, updated_at, last_active, stats, cookie_consent, password_hash)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+    `INSERT INTO users (id, username, display_name, email, created_at, updated_at, last_active, stats, password_hash)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
      ON CONFLICT (id) DO UPDATE SET
        username = EXCLUDED.username,
        display_name = EXCLUDED.display_name,
@@ -232,7 +222,6 @@ async function saveUserToDb(user) {
        updated_at = EXCLUDED.updated_at,
        last_active = EXCLUDED.last_active,
        stats = EXCLUDED.stats,
-       cookie_consent = EXCLUDED.cookie_consent,
        password_hash = EXCLUDED.password_hash`,
     [
       user.id,
@@ -243,7 +232,6 @@ async function saveUserToDb(user) {
       user.updatedAt || now,
       user.lastActive || now,
       JSON.stringify(user.stats),
-      user.cookieConsent ? JSON.stringify(user.cookieConsent) : null,
       user.passwordHash
     ]
   );

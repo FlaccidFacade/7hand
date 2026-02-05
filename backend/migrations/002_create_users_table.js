@@ -4,6 +4,7 @@ exports.up = (pgm) => {
     username: { type: 'varchar(20)', notNull: true, unique: true },
     display_name: { type: 'varchar(30)', notNull: true },
     email: { type: 'varchar(255)' },
+    password_hash: { type: 'varchar(255)' },
     created_at: { type: 'timestamp', notNull: true, default: pgm.func('now()') },
     updated_at: { type: 'timestamp', notNull: true, default: pgm.func('now()') },
     last_active: { type: 'timestamp', notNull: true, default: pgm.func('now()') },
