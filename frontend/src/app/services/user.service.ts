@@ -17,8 +17,9 @@ export interface User {
   lastActive: string;
 }
 
-export interface CreateUserRequest {
+export interface RegisterUserRequest {
   username: string;
+  password: string;
   displayName?: string;
   email?: string;
 }
@@ -36,9 +37,9 @@ export class UserService {
   constructor(private http: HttpClient) {}
 
   /**
-   * Create a new user
+   * Register a new user (POST /api/user)
    */
-  createUser(userData: CreateUserRequest): Observable<User> {
+  registerUser(userData: RegisterUserRequest): Observable<User> {
     return this.http.post<User>(this.apiUrl, userData);
   }
 

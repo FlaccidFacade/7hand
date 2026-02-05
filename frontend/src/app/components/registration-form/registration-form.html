@@ -66,6 +66,42 @@
       <div class="field-hint">Optional - for account recovery</div>
     </div>
 
+    <!-- Password Field -->
+    <div class="form-group">
+      <input
+        type="password"
+        id="password"
+        formControlName="password"
+        class="form-input"
+        [class.error]="password?.invalid && password?.touched"
+        placeholder="Choose a password"
+      />
+      <div class="error-message" *ngIf="password?.invalid && password?.touched">
+        <span *ngIf="password?.errors?.['required']">Password is required</span>
+        <span *ngIf="password?.errors?.['minlength']">Password must be at least 8 characters</span>
+      </div>
+      <div class="field-hint">*Required, minimum 8 characters</div>
+    </div>
+
+    <!-- Confirm Password Field -->
+    <div class="form-group">
+      <input
+        type="password"
+        id="confirmPassword"
+        formControlName="confirmPassword"
+        class="form-input"
+        [class.error]="(confirmPassword?.invalid && confirmPassword?.touched) || (registrationForm.errors?.['passwordMismatch'] && confirmPassword?.touched)"
+        placeholder="Confirm your password"
+      />
+      <div class="error-message" *ngIf="confirmPassword?.invalid && confirmPassword?.touched">
+        <span *ngIf="confirmPassword?.errors?.['required']">Please confirm your password</span>
+      </div>
+      <div class="error-message" *ngIf="registrationForm.errors?.['passwordMismatch'] && confirmPassword?.touched">
+        <span>Passwords do not match</span>
+      </div>
+      <div class="field-hint">*Required, must match password</div>
+    </div>
+
     <!-- Submit Button -->
     <button
       type="submit"

@@ -33,8 +33,13 @@ export class RegistrationForm implements OnInit {
         Validators.pattern(/^[a-zA-Z0-9_-]+$/)
       ]],
       displayName: ['', [Validators.maxLength(30)]],
-      email: ['', [Validators.email]]
-    });
+      email: ['', [Validators.email]],
+      password: ['', [
+        Validators.required,
+        Validators.minLength(8)
+      ]],
+      confirmPassword: ['', [Validators.required]]
+    }, { validators: this.passwordMatchValidator });
   }
 
   ngOnInit(): void {
@@ -65,6 +70,20 @@ export class RegistrationForm implements OnInit {
   }
 
   /**
+   * Validator to check if password and confirmPassword match
+   */
+  private passwordMatchValidator(control: AbstractControl): ValidationErrors | null {
+    const password = control.get('password');
+    const confirmPassword = control.get('confirmPassword');
+
+    if (!password || !confirmPassword) {
+      return null;
+    }
+
+    return password.value === confirmPassword.value ? null : { passwordMismatch: true };
+  }
+
+  /**
    * Custom validator function for profanity checking
    */
   private profanityValidatorFn(fieldName: 'username' | 'displayName') {
@@ -90,11 +109,12 @@ export class RegistrationForm implements OnInit {
       const formValue = this.registrationForm.value;
       const userData = {
         username: formValue.username,
+        password: formValue.password,
         displayName: formValue.displayName || formValue.username,
         email: formValue.email || undefined
       };
 
-      this.userService.createUser(userData).subscribe({
+      this.userService.registerUser(userData).subscribe({
         next: (user) => {
           this.isLoading = false;
           this.successMessage = `Account created successfully! Welcome, ${user.displayName}!`;
@@ -139,6 +159,14 @@ export class RegistrationForm implements OnInit {
 
   get email() {
     return this.registrationForm.get('email');
+  }
+
+  get password() {
+    return this.registrationForm.get('password');
+  }
+
+  get confirmPassword() {
+    return this.registrationForm.get('confirmPassword');
   }
 
   onLoginClick(event: Event): void {
