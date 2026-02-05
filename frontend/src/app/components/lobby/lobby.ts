@@ -52,6 +52,7 @@ export class Lobby implements OnInit, OnDestroy {
     if (userJson) {
       this.currentUser = JSON.parse(userJson);
       this.currentUserId = this.currentUser!.id;
+      this.userCoins = this.currentUser?.coins ?? 0;
     }
   }
 
