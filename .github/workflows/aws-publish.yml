@@ -19,6 +19,9 @@ jobs:
     strategy:
       matrix:
         component:
+          - name: nginx-proxy
+            dockerfile: ./nginx-proxy/Dockerfile
+            context: ./nginx-proxy
           - name: frontend
             dockerfile: ./frontend/Dockerfile
             context: ./frontend

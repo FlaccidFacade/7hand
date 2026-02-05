@@ -1,10 +1,22 @@
 services:
+  # Main nginx reverse proxy for EC2 deployment
+  # Routes traffic to frontend and backend services
+  sevenhand-proxy:
+    build: ./nginx-proxy
+    container_name: sevenhand-proxy
+    ports:
+      - "8000:8000"
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - app-network
+    restart: unless-stopped
+
   frontend:
     build:
       context: ./frontend
       target: prod
-    ports:
-      - "80:80"
     depends_on:
       - backend
     networks:
@@ -32,8 +44,6 @@ services:
 
   backend:
     build: ./backend
-    ports:
-      - "3000:3000"
     environment:
       NODE_ENV: production
       DB_HOST: db
