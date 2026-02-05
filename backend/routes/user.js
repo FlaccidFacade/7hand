@@ -57,6 +57,7 @@ router.get('/:userId', async (req, res) => {
       username: dbUser.username,
       displayName: dbUser.display_name,
       email: dbUser.email,
+      coins: dbUser.coins,
       createdAt: dbUser.created_at,
       updatedAt: dbUser.updated_at,
       lastActive: dbUser.last_active,
@@ -81,6 +82,7 @@ router.get('/username/:username', async (req, res) => {
       username: dbUser.username,
       displayName: dbUser.display_name,
       email: dbUser.email,
+      coins: dbUser.coins,
       createdAt: dbUser.created_at,
       updatedAt: dbUser.updated_at,
       lastActive: dbUser.last_active,
@@ -98,6 +100,7 @@ router.get('/', async (req, res) => {
       id: u.id,
       username: u.username,
       displayName: u.display_name,
+      coins: u.coins,
       stats: u.stats,
       createdAt: u.created_at,
       lastActive: u.last_active

@@ -31,6 +31,7 @@ router.post('/login', async (req, res) => {
       username: dbUser.username,
       displayName: dbUser.display_name,
       email: dbUser.email,
+      coins: dbUser.coins,
       createdAt: dbUser.created_at,
       updatedAt: dbUser.updated_at,
       lastActive: dbUser.last_active,

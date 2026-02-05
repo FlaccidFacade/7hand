@@ -8,6 +8,7 @@ exports.up = (pgm) => {
     created_at: { type: 'timestamp', notNull: true, default: pgm.func('now()') },
     updated_at: { type: 'timestamp', notNull: true, default: pgm.func('now()') },
     last_active: { type: 'timestamp', notNull: true, default: pgm.func('now()') },
+    coins: { type: 'integer', notNull: true, default: 0 },
     stats: { type: 'jsonb', notNull: true, default: '{"gamesPlayed":0,"gamesWon":0,"gamesLost":0}' }
   });
 

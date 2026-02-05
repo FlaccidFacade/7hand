@@ -12,6 +12,7 @@ export interface User {
   id: string;
   username: string;
   displayName: string;
+  coins: number;
   stats: UserStats;
   createdAt: string;
   lastActive: string;
@@ -27,6 +28,7 @@ export interface RegisterUserRequest {
 export interface UpdateUserRequest {
   displayName?: string;
   email?: string;
+  coins?: number;
   stats?: Partial<UserStats>;
 }
 

@@ -1,0 +1,141 @@
+<div class="lobby-container">
+  <div class="lobby-header">
+    <div class="lobby-info">
+      <h2 class="lobby-title">7hand</h2>
+    </div><div class="lobby-user-coins">💰{{ this.currentUser?.coins ?? "Loading..."}}</div>
+    <div class="lobby-actions">
+      <button class="btn-icon" (click)="openProfileModal()" title="Profile">
+        👤
+      </button>
+      <button class="btn-icon" (click)="openRulesModal()" title="Rules">
+        📖
+      </button>
+      <button class="btn-secondary" (click)="copyLobbyLink()">
+        📋 Copy Link
+      </button>
+      <button class="btn-danger" (click)="leaveLobby()">
+        Leave
+      </button>
+    </div>
+  </div>
+
+  <div class="card-table">
+    <div class="table-surface">
+      <!-- Center area with game info -->
+      <div class="table-center">
+        <div class="game-status" *ngIf="players.length < 2">
+          Waiting for players...
+        </div>
+        <div class="game-status" *ngIf="players.length >= 2 && !isHost">
+          Waiting for host to start
+        </div>
+        <button 
+          *ngIf="isHost && players.length >= 2" 
+          class="btn-start-game"
+          (click)="startGame()"
+        >
+          Start Game
+        </button>
+      </div>
+
+      <!-- Player seats around the table -->
+      <div class="seat seat-top-left" [class.occupied]="isPositionOccupied(0)">
+        <div class="player-spot" *ngIf="getPlayerAtPosition(0); let player">
+          <div class="player-avatar">{{ player.displayName.charAt(0).toUpperCase() }}</div>
+          <div class="player-name">{{ player.displayName }}</div>
+          <div class="host-badge" *ngIf="player.id === players[0]?.id">HOST</div>
+        </div>
+        <div class="empty-spot" *ngIf="!getPlayerAtPosition(0)">
+          <div class="empty-icon">+</div>
+        </div>
+      </div>
+
+      <div class="seat seat-top-center" [class.occupied]="isPositionOccupied(1)">
+        <div class="player-spot" *ngIf="getPlayerAtPosition(1); let player">
+          <div class="player-avatar">{{ player.displayName.charAt(0).toUpperCase() }}</div>
+          <div class="player-name">{{ player.displayName }}</div>
+          <div class="host-badge" *ngIf="player.id === players[0]?.id">HOST</div>
+        </div>
+        <div class="empty-spot" *ngIf="!getPlayerAtPosition(1)">
+          <div class="empty-icon">+</div>
+        </div>
+      </div>
+
+      <div class="seat seat-top-right" [class.occupied]="isPositionOccupied(2)">
+        <div class="player-spot" *ngIf="getPlayerAtPosition(2); let player">
+          <div class="player-avatar">{{ player.displayName.charAt(0).toUpperCase() }}</div>
+          <div class="player-name">{{ player.displayName }}</div>
+          <div class="host-badge" *ngIf="player.id === players[0]?.id">HOST</div>
+        </div>
+        <div class="empty-spot" *ngIf="!getPlayerAtPosition(2)">
+          <div class="empty-icon">+</div>
+        </div>
+      </div>
+
+      <div class="seat seat-bottom-left" [class.occupied]="isPositionOccupied(3)">
+        <div class="player-spot" *ngIf="getPlayerAtPosition(3); let player">
+          <div class="player-avatar">{{ player.displayName.charAt(0).toUpperCase() }}</div>
+          <div class="player-name">{{ player.displayName }}</div>
+          <div class="host-badge" *ngIf="player.id === players[0]?.id">HOST</div>
+        </div>
+        <div class="empty-spot" *ngIf="!getPlayerAtPosition(3)">
+          <div class="empty-icon">+</div>
+        </div>
+      </div>
+
+      <div class="seat seat-bottom-center" [class.occupied]="isPositionOccupied(4)">
+        <div class="player-spot" *ngIf="getPlayerAtPosition(4); let player">
+          <div class="player-avatar">{{ player.displayName.charAt(0).toUpperCase() }}</div>
+          <div class="player-name">{{ player.displayName }}</div>
+          <div class="host-badge" *ngIf="player.id === players[0]?.id">HOST</div>
+        </div>
+        <div class="empty-spot" *ngIf="!getPlayerAtPosition(4)">
+          <div class="empty-icon">+</div>
+        </div>
+      </div>
+
+      <div class="seat seat-bottom-right" [class.occupied]="isPositionOccupied(5)">
+        <div class="player-spot" *ngIf="getPlayerAtPosition(5); let player">
+          <div class="player-avatar">{{ player.displayName.charAt(0).toUpperCase() }}</div>
+          <div class="player-name">{{ player.displayName }}</div>
+          <div class="host-badge" *ngIf="player.id === players[0]?.id">HOST</div>
+        </div>
+        <div class="empty-spot" *ngIf="!getPlayerAtPosition(5)">
+          <div class="empty-icon">+</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table edge/rim -->
+    <div class="table-edge"></div>
+  </div>
+
+  <div class="lobby-footer">
+    <div class="game-info">
+      <span class="info-label">Share this lobby code with friends:</span>
+      <span class="lobby-code">{{ lobbyId }}</span>
+    </div>
+  </div>
+</div>
+
+<!-- Profile Modal -->
+<app-modal 
+  [isOpen]="showProfileModal" 
+  [title]="'User Profile'" 
+  (close)="closeProfileModal()"
+>
+  <app-user-profile 
+    *ngIf="currentUser"
+    [user]="currentUser"
+    (logout)="handleLogout()"
+  ></app-user-profile>
+</app-modal>
+
+<!-- Rules Modal -->
+<app-modal 
+  [isOpen]="showRulesModal" 
+  [title]="'Game Rules'" 
+  (close)="closeRulesModal()"
+>
+  <app-rules-display></app-rules-display>
+</app-modal>

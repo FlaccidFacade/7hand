@@ -17,6 +17,7 @@ class User {
     this.createdAt = data.createdAt || new Date();
     this.updatedAt = data.updatedAt || new Date();
     this.lastActive = data.lastActive || new Date();
+    this.coins = data.coins ?? 0;
     this.stats = data.stats || {
       gamesPlayed: 0,
       gamesWon: 0,
@@ -113,6 +114,7 @@ class User {
       id: this.id,
       username: this.username,
       displayName: this.displayName,
+      coins: this.coins,
       stats: this.stats,
       createdAt: this.createdAt,
       lastActive: this.lastActive
@@ -179,6 +181,7 @@ class UserManager {
     if (updates.displayName !== undefined) user.displayName = updates.displayName;
     if (updates.email !== undefined) user.email = updates.email;
     if (updates.stats !== undefined) user.updateStats(updates.stats);
+    if (updates.coins !== undefined) user.coins = updates.coins;
 
     user.updatedAt = new Date();
 
@@ -213,14 +216,15 @@ async function saveUserToDb(user) {
   }
   
   await pool.query(
-    `INSERT INTO users (id, username, display_name, email, created_at, updated_at, last_active, stats, password_hash)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+    `INSERT INTO users (id, username, display_name, email, created_at, updated_at, last_active, coins, stats, password_hash)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
      ON CONFLICT (id) DO UPDATE SET
        username = EXCLUDED.username,
        display_name = EXCLUDED.display_name,
        email = EXCLUDED.email,
        updated_at = EXCLUDED.updated_at,
        last_active = EXCLUDED.last_active,
+       coins = EXCLUDED.coins,
        stats = EXCLUDED.stats,
        password_hash = EXCLUDED.password_hash`,
     [
@@ -231,6 +235,7 @@ async function saveUserToDb(user) {
       user.createdAt || now,
       user.updatedAt || now,
       user.lastActive || now,
+      user.coins,
       JSON.stringify(user.stats),
       user.passwordHash
     ]

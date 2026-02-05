@@ -15,6 +15,7 @@ describe('User', () => {
       expect(user.displayName).toBe('Test User');
       expect(user.email).toBe('test@example.com');
       expect(user.createdAt).toBeInstanceOf(Date);
+      expect(user.coins).toBe(0);
       expect(user.stats).toEqual({
         gamesPlayed: 0,
         gamesWon: 0,
@@ -154,6 +155,7 @@ describe('User', () => {
       expect(safeObject.id).toBeDefined();
       expect(safeObject.username).toBe('testuser');
       expect(safeObject.displayName).toBe('Test User');
+      expect(safeObject.coins).toBe(0);
       expect(safeObject.stats).toBeDefined();
       expect(safeObject.createdAt).toBeDefined();
       expect(safeObject.lastActive).toBeDefined();

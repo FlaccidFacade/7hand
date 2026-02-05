@@ -1,1 +1,13 @@
-<p>modal works!</p>
+<div class="modal-backdrop" *ngIf="isOpen" (click)="onBackdropClick($event)">
+  <div class="modal-container">
+    <div class="modal-header">
+      <h3 class="modal-title">{{ title }}</h3>
+      <button class="modal-close" (click)="onClose()" aria-label="Close modal">
+        ✕
+      </button>
+    </div>
+    <div class="modal-content">
+      <ng-content></ng-content>
+    </div>
+  </div>
+</div>

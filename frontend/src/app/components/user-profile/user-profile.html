@@ -1,0 +1,95 @@
+<div class="user-profile" *ngIf="user">
+  <div class="profile-header">
+    <div class="user-info">
+      <div class="username">{{ user.displayName }}</div>
+      <div class="user-id">@{{ user.username }}</div>
+    </div>
+  </div>
+
+  <div class="stats-compact">
+    <div class="stat-item">
+      <span class="stat-label">W/L</span>
+      <span class="stat-value">{{ user.stats.gamesWon }}/{{ user.stats.gamesLost }}</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-label">Win %</span>
+      <span class="stat-value">{{ getWinRate() }}%</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-label">Total</span>
+      <span class="stat-value">{{ user.stats.gamesPlayed }}</span>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="cookie-settings">
+      <div class="cookie-toggle">
+        <label class="toggle-label">
+          <input 
+            type="checkbox" 
+            [checked]="preferences.essential" 
+            disabled
+            class="toggle-input"
+          />
+          <span class="toggle-switch disabled"></span>
+          <span class="toggle-text">Essential</span>
+        </label>
+        <p class="cookie-description">Required for basic site functionality. Cannot be disabled.</p>
+      </div>
+      
+      <div class="cookie-toggle">
+        <label class="toggle-label">
+          <input 
+            type="checkbox" 
+            [(ngModel)]="preferences.analytics"
+            (change)="togglePreference('analytics')"
+            class="toggle-input"
+          />
+          <span class="toggle-switch"></span>
+          <span class="toggle-text">Analytics</span>
+        </label>
+        <p class="cookie-description">Help us understand how you use the site to improve your experience.</p>
+      </div>
+      
+      <div class="cookie-toggle">
+        <label class="toggle-label">
+          <input 
+            type="checkbox" 
+            [(ngModel)]="preferences.advertising"
+            (change)="togglePreference('advertising')"
+            class="toggle-input"
+          />
+          <span class="toggle-switch"></span>
+          <span class="toggle-text">Advertising</span>
+        </label>
+        <p class="cookie-description">Allow ads to help support the game. No personal data is shared.</p>
+      </div>
+      
+      <div class="cookie-toggle">
+        <label class="toggle-label">
+          <input 
+            type="checkbox" 
+            [(ngModel)]="preferences.personalized"
+            (change)="togglePreference('personalized')"
+            class="toggle-input"
+          />
+          <span class="toggle-switch"></span>
+          <span class="toggle-text">Personalized</span>
+        </label>
+        <p class="cookie-description">Show ads and content tailored to your interests.</p>
+      </div>
+    </div>
+    
+    <button 
+      class="logout-btn" 
+      (click)="onLogout()"
+      aria-label="Logout"
+    >
+      Logout
+    </button>
+  </div>
+</div>
+
+<div class="user-profile-empty" *ngIf="!user">
+  <div class="empty-message">Not logged in</div>
+</div>

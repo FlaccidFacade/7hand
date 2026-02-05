@@ -74,6 +74,7 @@ describe('RegistrationForm', () => {
       id: '123',
       username: 'testuser',
       displayName: 'Test User',
+      coins: 0,
       stats: { gamesPlayed: 0, gamesWon: 0, gamesLost: 0 },
       createdAt: '2025-10-22T00:00:00.000Z',
       lastActive: '2025-10-22T00:00:00.000Z'

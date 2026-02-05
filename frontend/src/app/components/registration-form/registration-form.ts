@@ -108,10 +108,10 @@ export class RegistrationForm implements OnInit {
           this.successMessage = `Account created successfully! Welcome, ${user.displayName}!`;
           // Store user info in localStorage for demo purposes
           localStorage.setItem('currentUser', JSON.stringify(user));
-          // Navigate to /register after 2 seconds
+          // Navigate to lobby after 1 second
           setTimeout(() => {
-            this.router.navigate(['/']);
-          }, 2000);
+            this.router.navigate(['/lobby/main']);
+          }, 1000);
         },
         error: (error) => {
           this.isLoading = false;

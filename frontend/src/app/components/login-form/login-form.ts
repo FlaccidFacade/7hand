@@ -1,6 +1,7 @@
 import { Component, Output, EventEmitter } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
@@ -20,7 +21,8 @@ export class LoginForm {
 
   constructor(
     private formBuilder: FormBuilder,
-    private authService: AuthService
+    private authService: AuthService,
+    private router: Router
   ) {
     this.loginForm = this.formBuilder.group({
       username: ['', [Validators.required, Validators.minLength(3)]],
@@ -39,6 +41,8 @@ export class LoginForm {
           if (response.success) {
             console.log('Login successful:', response.user);
             this.loginSuccess.emit();
+            // Navigate to lobby
+            this.router.navigate(['/lobby/main']);
           }
         },
         error: (error) => {
