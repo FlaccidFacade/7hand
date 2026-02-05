@@ -12,8 +12,9 @@ This project contains both the frontend (Angular) and backend for a multiplayer 
 
 ### Project Structure
 
-- `frontend/` – Angular app (served on port 4200)
+- `frontend/` – Angular app (served on port 4200 in dev, port 80 in prod)
 - `backend/` – Express API (served on port 3000) [Legacy]
+- `nginx-proxy/` – Nginx reverse proxy for production EC2 deployments (port 8000)
 - `docker-compose.yml` – Orchestrates both services
 
 ### Quick Start (with Docker Compose)
@@ -35,6 +36,25 @@ This project contains both the frontend (Angular) and backend for a multiplayer 
    ```bash
    docker-compose down
    ```
+
+### Production Deployment
+
+For production EC2 deployments, use the nginx reverse proxy:
+
+1. Start the production stack with proxy:
+
+   ```bash
+   docker compose up sevenhand-proxy frontend backend db
+   ```
+
+2. Access the application through the proxy at: <http://localhost:8000>
+3. Health check endpoint for load balancers: <http://localhost:8000/health>
+
+The proxy provides:
+- Unified entry point for frontend and backend
+- Rate limiting and security features
+- WebSocket support for real-time game features
+- Optimized for AWS EC2 deployment
 
 ### Next Steps
 
