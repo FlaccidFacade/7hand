@@ -57,12 +57,11 @@ export class Lobby implements OnInit, OnDestroy {
   }
 
   loadLobby(): void {
-    // TODO: Load lobby data from API
+    // Load lobby data from API
     // For now, mock some players
     this.players = [
-      { id: '1', username: 'player1', displayName: 'Player 1', position: 0 },
-      { id: '2', username: 'player2', displayName: 'Player 2', position: 2 },
-      { id: '3', username: 'player3', displayName: 'Player 3', position: 4 }
+      { id: this.currentUserId || '1', username: this.currentUser?.username || 'player1', displayName: this.currentUser?.displayName || 'Player 1', position: 0 },
+     
     ];
     this.isHost = this.currentUserId === this.players[0]?.id;
   }
