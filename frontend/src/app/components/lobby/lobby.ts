@@ -6,7 +6,7 @@ import { HeaderComponent } from '../header/header.component';
 import { LobbyService, LobbyPlayer } from '../../services/lobby.service';
 import { WebRTCService } from '../../services/webrtc.service';
 import { SignalingService } from '../../services/signaling.service';
-import { Subscription } from 'rxjs';
+import { Subscription, firstValueFrom } from 'rxjs';
 
 interface Player {
   id: string;
@@ -101,7 +101,7 @@ export class Lobby implements OnInit, OnDestroy {
       await this.signalingService.initializeForLobby(this.lobbyId, this.currentUserId);
       
       // Notify other users that we joined
-      await this.signalingService.notifyJoined(this.lobbyId, this.currentUserId).toPromise();
+      await firstValueFrom(this.signalingService.notifyJoined(this.lobbyId, this.currentUserId));
     } catch (error) {
       console.error('Error setting up P2P connections:', error);
     }
@@ -133,7 +133,9 @@ export class Lobby implements OnInit, OnDestroy {
     
     // Notify others we're leaving
     if (this.lobbyId && this.currentUserId) {
-      this.signalingService.notifyLeft(this.lobbyId, this.currentUserId).subscribe();
+      this.signalingService.notifyLeft(this.lobbyId, this.currentUserId).subscribe({
+        error: (error) => console.error('Error notifying peers of leaving:', error)
+      });
     }
     
     // Clean up signaling

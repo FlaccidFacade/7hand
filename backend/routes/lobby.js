@@ -13,6 +13,25 @@ let userManager;
 // Structure: { lobbyId: { userId: [messages] } }
 const signalingMessages = new Map();
 
+// Maximum messages per user to prevent memory issues
+const MAX_MESSAGES_PER_USER = 100;
+
+// Cleanup old messages periodically
+setInterval(() => {
+  cleanupOldSignalingMessages();
+}, 5 * 60 * 1000); // Every 5 minutes
+
+function cleanupOldSignalingMessages() {
+  signalingMessages.forEach((lobbyMessages, lobbyId) => {
+    lobbyMessages.forEach((messages, userId) => {
+      // Keep only the most recent messages
+      if (messages.length > MAX_MESSAGES_PER_USER) {
+        lobbyMessages.set(userId, messages.slice(-MAX_MESSAGES_PER_USER));
+      }
+    });
+  });
+}
+
 function setManagers(lobby, user) {
   lobbyManager = lobby;
   userManager = user;
@@ -137,8 +156,14 @@ router.post('/:lobbyId/signal', (req, res) => {
     lobbyMessages.set(message.to, []);
   }
   
-  // Add message to recipient's queue
-  lobbyMessages.get(message.to).push(message);
+  // Add message to recipient's queue with size limit
+  const userMessages = lobbyMessages.get(message.to);
+  userMessages.push(message);
+  
+  // Keep only the most recent messages to prevent memory issues
+  if (userMessages.length > MAX_MESSAGES_PER_USER) {
+    lobbyMessages.set(message.to, userMessages.slice(-MAX_MESSAGES_PER_USER));
+  }
   
   logger.info(`Signaling message queued in lobby ${lobbyId}: ${message.type} from ${message.from} to ${message.to}`);
   res.json({ success: true });

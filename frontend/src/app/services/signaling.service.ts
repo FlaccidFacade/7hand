@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, Subject, interval } from 'rxjs';
+import { Observable, Subject, interval, firstValueFrom } from 'rxjs';
 import { WebRTCService } from './webrtc.service';
 
 export interface SignalingMessage {
@@ -9,6 +9,9 @@ export interface SignalingMessage {
   to: string;
   payload?: any;
 }
+
+// Polling interval in milliseconds
+const SIGNALING_POLL_INTERVAL_MS = 2000;
 
 @Injectable({
   providedIn: 'root'
@@ -45,10 +48,10 @@ export class SignalingService {
       return;
     }
 
-    // Poll every 2 seconds for signaling messages
+    // Poll for signaling messages
     this.pollingInterval = setInterval(() => {
       this.pollSignalingMessages();
-    }, 2000);
+    }, SIGNALING_POLL_INTERVAL_MS);
   }
 
   /**
@@ -70,7 +73,7 @@ export class SignalingService {
     }
 
     try {
-      const messages = await this.getSignalingMessages(this.lobbyId, this.userId).toPromise();
+      const messages = await firstValueFrom(this.getSignalingMessages(this.lobbyId, this.userId));
       if (messages && Array.isArray(messages)) {
         for (const message of messages) {
           await this.handleSignalingMessage(message);
@@ -188,7 +191,7 @@ export class SignalingService {
       payload: offer
     };
 
-    await this.sendSignalingMessage(this.lobbyId, message).toPromise();
+    await firstValueFrom(this.sendSignalingMessage(this.lobbyId, message));
   }
 
   /**
@@ -204,7 +207,7 @@ export class SignalingService {
       payload: answer
     };
 
-    await this.sendSignalingMessage(this.lobbyId, message).toPromise();
+    await firstValueFrom(this.sendSignalingMessage(this.lobbyId, message));
   }
 
   /**
@@ -220,7 +223,7 @@ export class SignalingService {
       payload: candidate.toJSON()
     };
 
-    await this.sendSignalingMessage(this.lobbyId, message).toPromise();
+    await firstValueFrom(this.sendSignalingMessage(this.lobbyId, message));
   }
 
   /**
