@@ -12,7 +12,7 @@ import { AdsenseService } from './services/adsense.service';
   standalone: true,
   imports: [RouterOutlet, CookieConsent, CommonModule, GoogleAdsense, MobilePopupAd],
   templateUrl: './app.html',
-  styleUrl: './app.css'
+  styleUrls: ['./app.css']
 })
 export class App implements AfterViewInit {
   @ViewChild(MobilePopupAd) mobilePopupAd?: MobilePopupAd;

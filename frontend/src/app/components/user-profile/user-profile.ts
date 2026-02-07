@@ -9,7 +9,7 @@ import { CookieService } from '../../services/cookie.service';
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './user-profile.html',
-  styleUrl: './user-profile.css'
+  styleUrls: ['./user-profile.css']
 })
 export class UserProfile implements OnInit {
   @Input() user: User | null = null;

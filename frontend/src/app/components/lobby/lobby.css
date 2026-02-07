@@ -9,40 +9,12 @@
     flex-direction: column;
 }
 
-.lobby-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1.5% 2.5%;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 1.5%;
-    backdrop-filter: blur(10px);
-}
 
-.lobby-info {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5%;
-}
 
-.lobby-title {
-    font-size: clamp(1.25rem, 2.5vw, 2rem);
-    font-weight: 700;
-    color: #ffffff;
-    margin: 0;
-}
 
 .player-count {
     font-size: clamp(0.75rem, 1.5vw, 1rem);
     color: rgba(255, 255, 255, 0.9);
-}
-
-.lobby-actions {
-    display: flex;
-    gap: 1%;
-    align-items: center;
-    padding: auto;
-    margin: auto;
 }
 
 .btn-icon,
@@ -278,12 +250,6 @@
     color: rgba(255, 255, 255, 0.9);
 }
 
-.lobby-user-coins {
-    margin-left:auto;
-    font-size: clamp(1rem, 2vw, 1.5rem);
-    font-weight: 600;
-    color: #ffffff;
-}
 
 .lobby-code {
     font-size: clamp(1.25rem, 2.5vw, 2rem);

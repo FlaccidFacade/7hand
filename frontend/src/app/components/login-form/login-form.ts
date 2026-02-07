@@ -8,7 +8,7 @@ import { AuthService } from '../../services/auth.service';
   selector: 'app-login-form',
   imports: [ReactiveFormsModule, CommonModule],
   templateUrl: './login-form.html',
-  styleUrl: './login-form.css'
+  styleUrls: ['./login-form.css']
 })
 export class LoginForm {
   @Output() registerClick = new EventEmitter<void>();

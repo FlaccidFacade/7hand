@@ -1,19 +1,62 @@
-import { Component, Input } from '@angular/core';
+import { Component } from '@angular/core';
+import { Router } from '@angular/router';
+import { CommonModule } from '@angular/common';
+
+import { User } from '../../services/user.service';
+import { Modal } from '../modal/modal';
+import { RulesDisplay } from '../rules-display/rules-display';
+import { UserProfile } from '../user-profile/user-profile';
 
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [],
+  imports: [ CommonModule, UserProfile, RulesDisplay, Modal],
   templateUrl: './header.component.html',
-  styleUrl: './header.component.css'
+  styleUrls: ['./header.component.css']
 })
 export class HeaderComponent {
-  @Input() health$: any;
-  @Input() onShowRules?: () => void;
+  userCoins = 0;
+  showProfileModal = false;
+  showRulesModal = false;
 
-  showRules() {
-    if (this.onShowRules) {
-      this.onShowRules();
+  currentUserId: string | null = null;
+  currentUser: User | null = null;
+
+  constructor(
+    private router: Router
+  ) {}
+
+  openProfileModal(): void {
+    this.showProfileModal = true;
+  }
+  
+  ngOnInit(): void {
+    this.loadCurrentUser();
+  }
+
+ loadCurrentUser(): void {
+    const userJson = localStorage.getItem('currentUser');
+    if (userJson) {
+      this.currentUser = JSON.parse(userJson);
+      this.currentUserId = this.currentUser!.id;
+      this.userCoins = this.currentUser?.coins ?? 0;
     }
+  }
+
+  closeProfileModal(): void {
+    this.showProfileModal = false;
+  }
+
+  openRulesModal(): void {
+    this.showRulesModal = true;
+  }
+
+  closeRulesModal(): void {
+    this.showRulesModal = false;
+  }
+
+  handleLogout(): void {
+    localStorage.removeItem('currentUser');
+    this.router.navigate(['/register']);
   }
 }

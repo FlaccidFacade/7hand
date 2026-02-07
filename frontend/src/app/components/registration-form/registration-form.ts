@@ -9,7 +9,7 @@ import { ProfanityValidatorService } from '../../services/profanity-validator.se
   selector: 'app-registration-form',
   imports: [ReactiveFormsModule, CommonModule],
   templateUrl: './registration-form.html',
-  styleUrl: './registration-form.css'
+  styleUrls: ['./registration-form.css']
 })
 export class RegistrationForm implements OnInit {
   @Output() loginClick = new EventEmitter<void>();

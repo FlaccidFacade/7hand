@@ -1,24 +1,6 @@
 <div class="lobby-container">
-  <div class="lobby-header">
-    <div class="lobby-info">
-      <h2 class="lobby-title">7hand</h2>
-    </div>
-    <div class="lobby-user-coins">💰{{ userCoins }}</div>
-    <div class="lobby-actions">
-      <button class="btn-icon" (click)="openProfileModal()" title="Profile">
-        👤
-      </button>
-      <button class="btn-icon" (click)="openRulesModal()" title="Rules">
-        📖
-      </button>
-      <button class="btn-secondary" (click)="copyLobbyLink()">
-        📋 Copy Link
-      </button>
-      <button class="btn-danger" (click)="leaveLobby()">
-        Leave
-      </button>
-    </div>
-  </div>
+  
+    <app-header></app-header>
 
   <div class="card-table">
     <div class="table-surface">
@@ -114,29 +96,10 @@
   <div class="lobby-footer">
     <div class="game-info">
       <span class="info-label">Share this lobby code with friends:</span>
-      <span class="lobby-code">{{ lobbyId }}</span>
+      <span class="lobby-code">   <button class="btn-secondary" (click)="copyLobbyLink()">
+        📋 Copy Link
+      </button>{{ lobbyId }}</span>
     </div>
   </div>
 </div>
 
-<!-- Profile Modal -->
-<app-modal 
-  [isOpen]="showProfileModal" 
-  [title]="'User Profile'" 
-  (close)="closeProfileModal()"
->
-  <app-user-profile 
-    *ngIf="currentUser"
-    [user]="currentUser"
-    (logout)="handleLogout()"
-  ></app-user-profile>
-</app-modal>
-
-<!-- Rules Modal -->
-<app-modal 
-  [isOpen]="showRulesModal" 
-  [title]="'Game Rules'" 
-  (close)="closeRulesModal()"
->
-  <app-rules-display></app-rules-display>
-</app-modal>

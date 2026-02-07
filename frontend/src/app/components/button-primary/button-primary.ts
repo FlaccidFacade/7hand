@@ -4,7 +4,7 @@ import { Component } from '@angular/core';
   selector: 'app-button-primary',
   imports: [],
   templateUrl: './button-primary.html',
-  styleUrl: './button-primary.css'
+  styleUrls: ['./button-primary.css']
 })
 export class ButtonPrimary {
 

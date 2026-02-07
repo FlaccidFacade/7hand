@@ -9,7 +9,7 @@ import { CommonModule } from '@angular/common';
   selector: 'app-registration',
   imports: [ RegistrationForm, LoginForm, RouterLink, RulesDisplay, CommonModule],
   templateUrl: './registration.html',
-  styleUrl: './registration.css'
+  styleUrls: ['./registration.css']
 })
 export class Registration {
   showLogin = false;

@@ -1,10 +1,8 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, Router } from '@angular/router';
-import { UserProfile } from '../user-profile/user-profile';
-import { RulesDisplay } from '../rules-display/rules-display';
-import { Modal } from '../modal/modal';
+import { ActivatedRoute } from '@angular/router';
 import { User } from '../../services/user.service';
+import { HeaderComponent } from '../header/header.component';
 
 interface Player {
   id: string;
@@ -16,9 +14,9 @@ interface Player {
 @Component({
   selector: 'app-lobby',
   standalone: true,
-  imports: [CommonModule, UserProfile, RulesDisplay, Modal],
+  imports: [CommonModule, HeaderComponent],
   templateUrl: './lobby.html',
-  styleUrl: './lobby.css'
+  styleUrls: ['./lobby.css']
 })
 export class Lobby implements OnInit, OnDestroy {
   userCoins = 0;
@@ -33,8 +31,7 @@ export class Lobby implements OnInit, OnDestroy {
   showRulesModal = false;
 
   constructor(
-    private route: ActivatedRoute,
-    private router: Router
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
@@ -75,9 +72,9 @@ export class Lobby implements OnInit, OnDestroy {
   }
 
   getEmptySeats(): number[] {
-    const occupied = this.players.map(p => p.position);
+    const occupied = new Set(this.players.map(p => p.position));
     return Array.from({ length: this.maxPlayers }, (_, i) => i)
-      .filter(i => !occupied.includes(i));
+      .filter(i => !occupied.has(i));
   }
 
   leaveLobby(): void {
@@ -92,30 +89,11 @@ export class Lobby implements OnInit, OnDestroy {
   }
 
   copyLobbyLink(): void {
-    const link = `${window.location.origin}/lobby/${this.lobbyId}`;
+    const link = `${globalThis.location.origin}/lobby/${this.lobbyId}`;
     navigator.clipboard.writeText(link).then(() => {
       console.log('Lobby link copied!');
     });
   }
 
-  openProfileModal(): void {
-    this.showProfileModal = true;
-  }
-
-  closeProfileModal(): void {
-    this.showProfileModal = false;
-  }
-
-  openRulesModal(): void {
-    this.showRulesModal = true;
-  }
-
-  closeRulesModal(): void {
-    this.showRulesModal = false;
-  }
-
-  handleLogout(): void {
-    localStorage.removeItem('currentUser');
-    this.router.navigate(['/register']);
-  }
+ 
 }
