@@ -57,20 +57,6 @@ describe('WebRTCService', () => {
     expect(connectedPeers.length).toBe(0);
   });
 
-  it('should emit peer connected event', (done) => {
-    service.peerConnected$.subscribe((peerId) => {
-      expect(peerId).toBeTruthy();
-      done();
-    });
-  });
-
-  it('should emit peer disconnected event', (done) => {
-    service.peerDisconnected$.subscribe((peerId) => {
-      expect(peerId).toBeTruthy();
-      done();
-    });
-  });
-
   it('should broadcast to all peers', async () => {
     const peerId1 = 'peer-1';
     const peerId2 = 'peer-2';

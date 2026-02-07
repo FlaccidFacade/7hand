@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { UserService, CreateUserRequest, User } from './user.service';
+import { UserService, RegisterUserRequest, User } from './user.service';
 
 describe('UserService', () => {
   let service: UserService;
@@ -23,9 +23,10 @@ describe('UserService', () => {
     expect(service).toBeTruthy();
   });
 
-  it('should create a user', () => {
-    const createUserRequest: CreateUserRequest = {
+  it('should register a user', () => {
+    const registerUserRequest: RegisterUserRequest = {
       username: 'testuser',
+      password: 'password123',
       displayName: 'Test User',
       email: 'test@example.com'
     };
@@ -40,13 +41,13 @@ describe('UserService', () => {
       lastActive: '2025-10-22T00:00:00.000Z'
     };
 
-    service.createUser(createUserRequest).subscribe(user => {
+    service.registerUser(registerUserRequest).subscribe((user: User) => {
       expect(user).toEqual(mockUser);
     });
 
     const req = httpMock.expectOne('/api/user');
     expect(req.request.method).toBe('POST');
-    expect(req.request.body).toEqual(createUserRequest);
+    expect(req.request.body).toEqual(registerUserRequest);
     req.flush(mockUser);
   });
 

@@ -13,7 +13,7 @@ describe('RegistrationForm', () => {
   let mockRouter: jasmine.SpyObj<Router>;
 
   beforeEach(async () => {
-    mockUserService = jasmine.createSpyObj('UserService', ['createUser']);
+    mockUserService = jasmine.createSpyObj('UserService', ['registerUser']);
     mockRouter = jasmine.createSpyObj('Router', ['navigate']);
 
     await TestBed.configureTestingModule({
@@ -80,7 +80,7 @@ describe('RegistrationForm', () => {
       lastActive: '2025-10-22T00:00:00.000Z'
     };
 
-    mockUserService.createUser.and.returnValue(of(mockUser));
+    mockUserService.registerUser.and.returnValue(of(mockUser));
 
     component.registrationForm.patchValue({
       username: 'testuser',
@@ -90,11 +90,11 @@ describe('RegistrationForm', () => {
 
     component.onSubmit();
 
-    expect(mockUserService.createUser).toHaveBeenCalledWith({
+    expect(mockUserService.registerUser).toHaveBeenCalledWith(jasmine.objectContaining({
       username: 'testuser',
       displayName: 'Test User',
       email: 'test@example.com'
-    });
+    }));
     expect(component.successMessage).toContain('Welcome');
   });
 
@@ -104,7 +104,7 @@ describe('RegistrationForm', () => {
       error: { error: 'Invalid user data' }
     };
 
-    mockUserService.createUser.and.returnValue(throwError(() => errorResponse));
+    mockUserService.registerUser.and.returnValue(throwError(() => errorResponse));
 
     component.registrationForm.patchValue({
       username: 'testuser'
@@ -122,7 +122,7 @@ describe('RegistrationForm', () => {
       error: { error: 'Username already exists' }
     };
 
-    mockUserService.createUser.and.returnValue(throwError(() => errorResponse));
+    mockUserService.registerUser.and.returnValue(throwError(() => errorResponse));
 
     component.registrationForm.patchValue({
       username: 'existinguser'
@@ -140,6 +140,6 @@ describe('RegistrationForm', () => {
 
     component.onSubmit();
 
-    expect(mockUserService.createUser).not.toHaveBeenCalled();
+    expect(mockUserService.registerUser).not.toHaveBeenCalled();
   });
 });

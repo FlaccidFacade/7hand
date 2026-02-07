@@ -40,7 +40,7 @@ export class WebRTCService {
   async createPeerConnection(peerId: string, isInitiator: boolean = false): Promise<RTCPeerConnection> {
     if (this.peerConnections.has(peerId)) {
       const existing = this.peerConnections.get(peerId);
-      if (existing?.connection.connectionState !== 'closed') {
+      if (existing && existing.connection.connectionState !== 'closed') {
         return existing.connection;
       }
     }
