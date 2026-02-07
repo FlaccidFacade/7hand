@@ -55,7 +55,7 @@ export class HeaderComponent {
     this.showRulesModal = false;
   }
 
-  handleLogout(): void {
+  logout(): void {
     localStorage.removeItem('currentUser');
     this.router.navigate(['/register']);
   }
