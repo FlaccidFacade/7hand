@@ -9,6 +9,10 @@ const router = express.Router();
 let lobbyManager;
 let userManager;
 
+// In-memory storage for signaling messages
+// Structure: { lobbyId: { userId: [messages] } }
+const signalingMessages = new Map();
+
 function setManagers(lobby, user) {
   lobbyManager = lobby;
   userManager = user;
@@ -105,6 +109,146 @@ router.delete('/:lobbyId', async (req, res) => {
   const { lobbyId } = req.params;
   lobbyManager.removeLobby(lobbyId);
   await removeLobbyFromDb(lobbyId);
+  // Clean up signaling messages
+  signalingMessages.delete(lobbyId);
+  res.json({ success: true });
+});
+
+// WebRTC signaling endpoints
+
+// Post a signaling message to the lobby
+router.post('/:lobbyId/signal', (req, res) => {
+  const { lobbyId } = req.params;
+  const message = req.body;
+  
+  if (!message.type || !message.from || !message.to) {
+    return res.status(400).json({ error: 'Invalid signaling message' });
+  }
+  
+  // Initialize lobby signaling storage if needed
+  if (!signalingMessages.has(lobbyId)) {
+    signalingMessages.set(lobbyId, new Map());
+  }
+  
+  const lobbyMessages = signalingMessages.get(lobbyId);
+  
+  // Initialize user message queue if needed
+  if (!lobbyMessages.has(message.to)) {
+    lobbyMessages.set(message.to, []);
+  }
+  
+  // Add message to recipient's queue
+  lobbyMessages.get(message.to).push(message);
+  
+  logger.info(`Signaling message queued in lobby ${lobbyId}: ${message.type} from ${message.from} to ${message.to}`);
+  res.json({ success: true });
+});
+
+// Get signaling messages for a user
+router.get('/:lobbyId/signal/:userId', (req, res) => {
+  const { lobbyId, userId } = req.params;
+  
+  const lobbyMessages = signalingMessages.get(lobbyId);
+  if (!lobbyMessages || !lobbyMessages.has(userId)) {
+    return res.json([]);
+  }
+  
+  // Get all messages for this user and clear the queue
+  const messages = lobbyMessages.get(userId) || [];
+  lobbyMessages.set(userId, []);
+  
+  res.json(messages);
+});
+
+// Notify that a user joined the lobby
+router.post('/:lobbyId/notify-joined', (req, res) => {
+  const { lobbyId } = req.params;
+  const { userId } = req.body;
+  
+  if (!userId) return res.status(400).json({ error: 'User ID required' });
+  
+  const lobby = lobbyManager.getLobby(lobbyId);
+  if (!lobby) return res.status(404).json({ error: 'Lobby not found' });
+  
+  // Initialize lobby signaling storage if needed
+  if (!signalingMessages.has(lobbyId)) {
+    signalingMessages.set(lobbyId, new Map());
+  }
+  
+  const lobbyMessages = signalingMessages.get(lobbyId);
+  
+  // Notify all other users in the lobby
+  lobby.users.forEach(user => {
+    if (user.id !== userId) {
+      if (!lobbyMessages.has(user.id)) {
+        lobbyMessages.set(user.id, []);
+      }
+      lobbyMessages.get(user.id).push({
+        type: 'peer-joined',
+        from: userId,
+        to: user.id
+      });
+    }
+  });
+  
+  logger.info(`User ${userId} joined lobby ${lobbyId}, notifications sent`);
+  res.json({ success: true });
+});
+
+// Notify that a user left the lobby
+router.post('/:lobbyId/notify-left', (req, res) => {
+  const { lobbyId } = req.params;
+  const { userId } = req.body;
+  
+  if (!userId) return res.status(400).json({ error: 'User ID required' });
+  
+  const lobby = lobbyManager.getLobby(lobbyId);
+  
+  // Initialize lobby signaling storage if needed
+  if (!signalingMessages.has(lobbyId)) {
+    signalingMessages.set(lobbyId, new Map());
+  }
+  
+  const lobbyMessages = signalingMessages.get(lobbyId);
+  
+  // Notify all users in the lobby (even if lobby doesn't exist)
+  if (lobby) {
+    lobby.users.forEach(user => {
+      if (user.id !== userId) {
+        if (!lobbyMessages.has(user.id)) {
+          lobbyMessages.set(user.id, []);
+        }
+        lobbyMessages.get(user.id).push({
+          type: 'peer-left',
+          from: userId,
+          to: user.id
+        });
+      }
+    });
+  }
+  
+  // Clean up user's message queue
+  lobbyMessages.delete(userId);
+  
+  logger.info(`User ${userId} left lobby ${lobbyId}, notifications sent`);
+  res.json({ success: true });
+});
+
+// Leave lobby endpoint
+router.post('/:lobbyId/leave', async (req, res) => {
+  const { userId } = req.body;
+  const { lobbyId } = req.params;
+  
+  if (!userId) return res.status(400).json({ error: 'User ID required' });
+  
+  const lobby = lobbyManager.getLobby(lobbyId);
+  if (!lobby) return res.status(404).json({ error: 'Lobby not found' });
+  
+  // Remove user from lobby
+  lobby.users = lobby.users.filter(u => u.id !== userId);
+  await saveLobbyToDb(lobby);
+  
+  logger.info(`User ${userId} left lobby ${lobbyId}`);
   res.json({ success: true });
 });
 
