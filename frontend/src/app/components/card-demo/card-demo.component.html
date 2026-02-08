@@ -1,0 +1,55 @@
+<div class="demo-container">
+  <h1>Playing Card Component Demo</h1>
+  <p class="instructions">
+    Double-click any card to flip it. Drag to rotate. All 53 card types are shown below.
+  </p>
+
+  <div class="controls">
+    <h3>Interactive Card</h3>
+    <div class="control-panel">
+      <label>
+        Suit:
+        <select [(ngModel)]="selectedSuit">
+          <option *ngFor="let suit of suits" [value]="suit">{{ suit }}</option>
+          <option value="joker">joker</option>
+        </select>
+      </label>
+      <label>
+        Rank:
+        <select [(ngModel)]="selectedRank">
+          <option *ngFor="let rank of ranks" [value]="rank">{{ rank }}</option>
+          <option value="JOKER">JOKER</option>
+        </select>
+      </label>
+      <label>
+        <input type="checkbox" [(ngModel)]="showFaceUp">
+        Face Up
+      </label>
+      <label>
+        <input type="checkbox" [(ngModel)]="isDraggable">
+        Draggable
+      </label>
+    </div>
+    <div class="single-card-demo">
+      <app-playing-card 
+        [suit]="selectedSuit" 
+        [rank]="selectedRank"
+        [faceUp]="showFaceUp"
+        [draggable]="isDraggable">
+      </app-playing-card>
+    </div>
+  </div>
+
+  <div class="all-cards-section">
+    <h3>All 53 Card Types</h3>
+    <div class="card-grid">
+      <app-playing-card 
+        *ngFor="let card of allCards" 
+        [suit]="card.suit" 
+        [rank]="card.rank"
+        [faceUp]="true"
+        [draggable]="true">
+      </app-playing-card>
+    </div>
+  </div>
+</div>
