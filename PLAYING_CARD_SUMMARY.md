@@ -4,10 +4,10 @@
 
 ```
 frontend/src/app/components/playing-card/
-├── playing-card.component.ts       # 125 lines - Component logic
-├── playing-card.component.html     # 160 lines - Card templates
-├── playing-card.component.css      # 421 lines - Styling
-├── playing-card.component.spec.ts  # 236 lines - 28 unit tests
+├── playing-card.component.ts       # 123 lines - Component logic
+├── playing-card.component.html     # 142 lines - Card templates
+├── playing-card.component.css      # 413 lines - Styling
+├── playing-card.component.spec.ts  # 254 lines - 28 unit tests
 └── README.md                       # Complete documentation
 ```
 

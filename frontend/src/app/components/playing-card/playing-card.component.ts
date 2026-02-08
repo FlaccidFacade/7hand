@@ -72,13 +72,8 @@ export class PlayingCardComponent {
     if (!this.isDragging || !this.draggable) return;
 
     const deltaX = event.clientX - this.startX;
-    const deltaY = event.clientY - this.startY;
     
-    // Calculate rotation based on diagonal drag distance
-    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-    const angle = Math.atan2(deltaY, deltaX) * (180 / Math.PI);
-    
-    // Rotate based on drag direction and distance
+    // Rotate based on horizontal drag distance
     this.rotation = this.startRotation + (deltaX / 2);
   }
 

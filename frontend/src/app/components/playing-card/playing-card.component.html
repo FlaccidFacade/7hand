@@ -4,7 +4,9 @@
      [class.joker]="isJoker"
      [style.transform]="'rotate(' + rotation + 'deg)'"
      (dblclick)="toggleFace()"
-     title="Double-click to flip, drag to rotate">
+     title="Double-click to flip, drag to rotate"
+     [attr.aria-label]="'Playing card: ' + displayRank + ' of ' + suit + (faceUp ? ' face up' : ' face down')"
+     role="img">
   
   <div class="card-inner" *ngIf="faceUp">
     <!-- Card Face -->
