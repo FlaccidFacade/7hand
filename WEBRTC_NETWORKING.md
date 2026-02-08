@@ -126,7 +126,7 @@ docker run -d --network=host \
 
 | Component | Ports | Protocol | Purpose |
 |-----------|-------|----------|---------|
-| Backend API | 3000 | HTTP/WS | Signaling server |
+| Backend API | 3000 | HTTP | Signaling server |
 | Frontend | 4200/80 | HTTP | Web app delivery |
 | STUN (Google) | 19302 | UDP | NAT discovery (external) |
 | TURN (if added) | 3478, 49152-65535 | UDP/TCP | Relay traffic (your server) |
