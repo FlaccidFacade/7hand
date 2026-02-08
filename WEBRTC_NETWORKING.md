@@ -15,7 +15,7 @@ The application is configured to use **Google's public STUN servers**:
 - `stun:stun.l.google.com:19302`
 - `stun:stun1.l.google.com:19302`
 
-**Configuration Location:** `frontend/src/app/services/webrtc.service.ts` (lines 28-33)
+**Configuration Location:** `frontend/src/app/services/webrtc.service.ts` (STUN/ICE servers configuration block)
 
 ### TURN Servers: ❌ **Not Currently Configured**
 
