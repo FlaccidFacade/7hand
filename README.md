@@ -17,6 +17,16 @@ This project contains both the frontend (Angular) and backend for a multiplayer 
 - `nginx-proxy/` – Nginx reverse proxy for production EC2 deployments (port 8000)
 - `docker-compose.yml` – Orchestrates both services
 
+### WebRTC Peer-to-Peer Networking
+
+7hand uses WebRTC for real-time peer-to-peer game state synchronization between players. This reduces server load and latency by allowing players to communicate directly.
+
+📖 **See [WEBRTC_NETWORKING.md](WEBRTC_NETWORKING.md) for detailed information about:**
+- STUN and TURN server configuration
+- Network infrastructure requirements
+- Whether you need additional nodes for production
+- Cost analysis and deployment recommendations
+
 ### Quick Start (with Docker Compose)
 
 1. Build and start 3 main services:
