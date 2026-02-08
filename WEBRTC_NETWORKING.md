@@ -33,7 +33,7 @@ The application does **NOT** have TURN servers configured.
 **When it works:**
 - Both peers have moderate NAT (most home routers)
 - At least one peer has a public IP or permissive firewall
-- Success rate: ~80-85% of connections
+- Connection success varies by network environment (industry studies suggest ~80-85% success with STUN-only in typical conditions)
 
 **Current Setup:**
 ✅ Using free Google public STUN servers (suitable for development and small-scale production)
@@ -48,10 +48,10 @@ The application does **NOT** have TURN servers configured.
 **When you need it:**
 - Both peers behind symmetric NAT or restrictive firewalls
 - Corporate networks, mobile carriers, or strict firewall policies
-- To guarantee connection success (99%+ connection rate)
+- To maximize connection reliability across all network configurations
 
 **Current Setup:**
-❌ No TURN server configured - connections may fail in ~15-20% of cases
+❌ No TURN server configured - connection success will vary depending on network conditions
 
 ## Do You Need More Nodes?
 
@@ -74,12 +74,12 @@ You currently need:
 - Can use free TURN services like:
   - Xirsys (free tier: 500 MB/month)
   - Twilio STUN/TURN (pay-as-you-go)
-- Or accept 15-20% connection failure rate
+- Or accept varying connection reliability depending on user networks
 
 **For Production/Commercial Use:** ✅ **Yes, Recommended**
 - Critical for reliability and user experience
 - Required for users behind restrictive corporate firewalls
-- Guarantees near 100% connection success rate
+- Significantly improves connection success rate across all network types
 
 ### Infrastructure Options
 
@@ -184,7 +184,7 @@ docker run -d --network=host \
 
 3. **Monitor Connection Success Rate**
    - Track successful P2P connections
-   - Add TURN if success rate <85%
+   - Add TURN if experiencing connection issues
 
 4. **Load Balancing** (for scale)
    - Multiple backend nodes behind load balancer
@@ -263,7 +263,7 @@ user=username:password
 - ✅ STUN servers configured (Google public)
 - ❌ No TURN servers
 - ✅ Signaling server (HTTP polling)
-- ✅ Works for most connections (~80-85%)
+- ✅ Works for most connections in typical network environments
 
 **Node Requirements:**
 - **Minimum:** 1 backend + 1 database = **2 nodes**
