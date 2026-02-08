@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-7hand is a multiplayer card game (rummy variation) featuring 7 hands per game. The project is a full-stack monorepo with Angular frontend, Node.js/Express backend (with a legacy Go backend), PostgreSQL database, and Docker-based deployment.
+7hand is a multiplayer card game (rummy variation) featuring 7 hands per game. The project is a full-stack monorepo with Angular frontend, Node.js/Express backend, PostgreSQL database, and Docker-based deployment.
 
 **Key Features:**
 - Real-time multiplayer card game
@@ -22,13 +22,12 @@
 - **Package Manager:** npm
 
 ### Backend
-- **Primary:** Node.js 20+ with Express 5+
+- **Runtime:** Node.js 20+ with Express 5+
 - **Database:** PostgreSQL 16
 - **ORM:** Raw SQL with pg library
-- **Testing:** Jest with Supertest
+- **Testing:** Jest
 - **Migrations:** node-pg-migrate
 - **Logging:** Winston
-- **Legacy:** Go backend (server directory)
 
 ### Infrastructure
 - **Containerization:** Docker + Docker Compose
