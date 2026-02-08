@@ -61,7 +61,7 @@ The answer depends on your deployment scenario:
 
 You currently need:
 1. **1+ Backend Server(s)** (Node.js/Express) - for signaling and API
-2. **1 Database Server** (PostgreSQL/MySQL) - for user data and lobby state
+2. **1 Database Server** (PostgreSQL) - for user data and lobby state
 3. **Client Browsers** - where WebRTC P2P connections run
 
 ### Do You Need TURN Servers?
