@@ -18,26 +18,26 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_USER: ${{ secrets.DB_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          POSTGRES_DB: ${{ secrets.DB_NAME }}
+          POSTGRES_USER: ${{ secrets.DB_USER || 'card-game' }}
+          POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD || 'changeme' }}
+          POSTGRES_DB: ${{ secrets.DB_NAME || 'card-game-db' }}
         ports:
           - 5432:5432
         options: >-
-          --health-cmd="pg_isready -U ${{ secrets.DB_USER }} -d ${{ secrets.DB_NAME }} -h localhost"
+          --health-cmd="pg_isready -U ${{ secrets.DB_USER || 'card-game' }} -d ${{ secrets.DB_NAME || 'card-game-db' }} -h localhost"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
 
     env:
       # Build a DATABASE_URL from secrets and point to the service on localhost
-      DATABASE_URL: postgresql://${{ secrets.DB_USER }}:${{ secrets.DB_PASSWORD }}@localhost:5432/${{ secrets.DB_NAME }}
+      DATABASE_URL: postgresql://${{ secrets.DB_USER || 'card-game' }}:${{ secrets.DB_PASSWORD || 'changeme' }}@localhost:5432/${{ secrets.DB_NAME || 'card-game-db' }}
       # Keep individual vars for code paths that read discrete envs
       DB_HOST: localhost
       DB_PORT: 5432
-      DB_USER: ${{ secrets.DB_USER }}
-      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-      DB_NAME: ${{ secrets.DB_NAME }}
+      DB_USER: ${{ secrets.DB_USER || 'card-game' }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD || 'changeme' }}
+      DB_NAME: ${{ secrets.DB_NAME || 'card-game-db' }}
 
     steps:
       - name: Checkout
