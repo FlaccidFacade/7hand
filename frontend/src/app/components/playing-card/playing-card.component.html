@@ -1,0 +1,143 @@
+<div class="playing-card" 
+     [class.dragging]="isDragging"
+     [class.face-down]="!faceUp"
+     [class.joker]="isJoker"
+     [style.transform]="'rotate(' + rotation + 'deg)'"
+     (dblclick)="toggleFace()"
+     title="Double-click to flip, drag to rotate"
+     [attr.aria-label]="'Playing card: ' + displayRank + ' of ' + suit + (faceUp ? ' face up' : ' face down')"
+     role="img">
+  
+  <div class="card-inner" *ngIf="faceUp">
+    <!-- Card Face -->
+    <div class="card-face" [class.red]="suitColor === 'red'">
+      <!-- Top left corner -->
+      <div class="corner top-left">
+        <div class="rank">{{ displayRank }}</div>
+        <div class="suit">{{ suitSymbol }}</div>
+      </div>
+
+      <!-- Center symbol(s) -->
+      <div class="center-symbols" *ngIf="!isJoker">
+        <ng-container [ngSwitch]="rank">
+          <!-- Ace -->
+          <div *ngSwitchCase="'A'" class="symbol-layout ace">
+            <span class="symbol">{{ suitSymbol }}</span>
+          </div>
+          
+          <!-- Number cards 2-10 -->
+          <div *ngSwitchCase="'2'" class="symbol-layout two">
+            <span class="symbol">{{ suitSymbol }}</span>
+            <span class="symbol">{{ suitSymbol }}</span>
+          </div>
+          
+          <div *ngSwitchCase="'3'" class="symbol-layout three">
+            <span class="symbol">{{ suitSymbol }}</span>
+            <span class="symbol">{{ suitSymbol }}</span>
+            <span class="symbol">{{ suitSymbol }}</span>
+          </div>
+          
+          <div *ngSwitchCase="'4'" class="symbol-layout four">
+            <span class="symbol">{{ suitSymbol }}</span>
+            <span class="symbol">{{ suitSymbol }}</span>
+            <span class="symbol">{{ suitSymbol }}</span>
+            <span class="symbol">{{ suitSymbol }}</span>
+          </div>
+          
+          <div *ngSwitchCase="'5'" class="symbol-layout five">
+            <span class="symbol">{{ suitSymbol }}</span>
+            <span class="symbol">{{ suitSymbol }}</span>
+            <span class="symbol">{{ suitSymbol }}</span>
+            <span class="symbol">{{ suitSymbol }}</span>
+            <span class="symbol">{{ suitSymbol }}</span>
+          </div>
+          
+          <div *ngSwitchCase="'6'" class="symbol-layout six">
+            <span class="symbol">{{ suitSymbol }}</span>
+            <span class="symbol">{{ suitSymbol }}</span>
+            <span class="symbol">{{ suitSymbol }}</span>
+            <span class="symbol">{{ suitSymbol }}</span>
+            <span class="symbol">{{ suitSymbol }}</span>
+            <span class="symbol">{{ suitSymbol }}</span>
+          </div>
+          
+          <div *ngSwitchCase="'7'" class="symbol-layout seven">
+            <span class="symbol">{{ suitSymbol }}</span>
+            <span class="symbol">{{ suitSymbol }}</span>
+            <span class="symbol">{{ suitSymbol }}</span>
+            <span class="symbol">{{ suitSymbol }}</span>
+            <span class="symbol">{{ suitSymbol }}</span>
+            <span class="symbol">{{ suitSymbol }}</span>
+            <span class="symbol">{{ suitSymbol }}</span>
+          </div>
+          
+          <div *ngSwitchCase="'8'" class="symbol-layout eight">
+            <span class="symbol">{{ suitSymbol }}</span>
+            <span class="symbol">{{ suitSymbol }}</span>
+            <span class="symbol">{{ suitSymbol }}</span>
+            <span class="symbol">{{ suitSymbol }}</span>
+            <span class="symbol">{{ suitSymbol }}</span>
+            <span class="symbol">{{ suitSymbol }}</span>
+            <span class="symbol">{{ suitSymbol }}</span>
+            <span class="symbol">{{ suitSymbol }}</span>
+          </div>
+          
+          <div *ngSwitchCase="'9'" class="symbol-layout nine">
+            <span class="symbol">{{ suitSymbol }}</span>
+            <span class="symbol">{{ suitSymbol }}</span>
+            <span class="symbol">{{ suitSymbol }}</span>
+            <span class="symbol">{{ suitSymbol }}</span>
+            <span class="symbol">{{ suitSymbol }}</span>
+            <span class="symbol">{{ suitSymbol }}</span>
+            <span class="symbol">{{ suitSymbol }}</span>
+            <span class="symbol">{{ suitSymbol }}</span>
+            <span class="symbol">{{ suitSymbol }}</span>
+          </div>
+          
+          <div *ngSwitchCase="'10'" class="symbol-layout ten">
+            <span class="symbol">{{ suitSymbol }}</span>
+            <span class="symbol">{{ suitSymbol }}</span>
+            <span class="symbol">{{ suitSymbol }}</span>
+            <span class="symbol">{{ suitSymbol }}</span>
+            <span class="symbol">{{ suitSymbol }}</span>
+            <span class="symbol">{{ suitSymbol }}</span>
+            <span class="symbol">{{ suitSymbol }}</span>
+            <span class="symbol">{{ suitSymbol }}</span>
+            <span class="symbol">{{ suitSymbol }}</span>
+            <span class="symbol">{{ suitSymbol }}</span>
+          </div>
+          
+          <!-- Face cards -->
+          <div *ngSwitchCase="'J'" class="symbol-layout face">
+            <span class="face-letter">J</span>
+          </div>
+          
+          <div *ngSwitchCase="'Q'" class="symbol-layout face">
+            <span class="face-letter">Q</span>
+          </div>
+          
+          <div *ngSwitchCase="'K'" class="symbol-layout face">
+            <span class="face-letter">K</span>
+          </div>
+        </ng-container>
+      </div>
+
+      <!-- Joker special display -->
+      <div class="joker-center" *ngIf="isJoker">
+        <span class="joker-symbol">{{ suitSymbol }}</span>
+        <span class="joker-text">JOKER</span>
+      </div>
+
+      <!-- Bottom right corner (upside down) -->
+      <div class="corner bottom-right">
+        <div class="rank">{{ displayRank }}</div>
+        <div class="suit">{{ suitSymbol }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card Back -->
+  <div class="card-back" *ngIf="!faceUp">
+    <div class="back-pattern"></div>
+  </div>
+</div>
