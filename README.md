@@ -4,7 +4,7 @@ is a rummy variation for all ages. featuring 7 hands to play each game!
 
 ## Getting Started with Development
 
-ensure you have [docker](https://docs.docker.com/get-started/) compose in a shell environment. preferably vscode w/ devcontainers extension installed.
+ensure you have [docker compose]([https://docs.docker.com/get-started/](https://docs.docker.com/compose/))  in a shell environment. preferably vscode w/ devcontainers extension installed.
 
 ## Card Game Monorepo
 
