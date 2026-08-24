@@ -15,7 +15,7 @@
     "express": "^5.2.1",
     "pg": "^8.23.0",
     "winston": "^3.19.0",
-    "uuid": "^14.0.1"
+    "uuid": "^14.0.2"
   },
   "devDependencies": {
     "jest": "^30.4.2",
