@@ -52,8 +52,10 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-changeme}
       DB_NAME: ${DB_NAME:-card-game-db}
       DATABASE_URL: postgres://${DB_USER:-card-game}:${DB_PASSWORD:-changeme}@db:5432/${DB_NAME:-card-game-db}
+    restart: on-failure
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     networks:
       - app-network
 
@@ -64,6 +66,11 @@ services:
       POSTGRES_USER: ${DB_USER:-card-game}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
       POSTGRES_DB: ${DB_NAME:-card-game-db}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-card-game} -d ${DB_NAME:-card-game-db}"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
     volumes:
       - db-data:/var/lib/postgresql/data
     networks:
