@@ -44,16 +44,18 @@ services:
 
   backend:
     build: ./backend
+    restart: on-failure
     environment:
       NODE_ENV: production
       DB_HOST: db
       DB_PORT: 5432
-      DB_USER: ${DB_USER:-card-game}
-      DB_PASSWORD: ${DB_PASSWORD:-changeme}
-      DB_NAME: ${DB_NAME:-card-game-db}
-      DATABASE_URL: postgres://${DB_USER:-card-game}:${DB_PASSWORD:-changeme}@db:5432/${DB_NAME:-card-game-db}
+      DB_USER: card-game
+      DB_PASSWORD: changeme
+      DB_NAME: card-game-db
+      DATABASE_URL: postgres://card-game:changeme@db:5432/card-game-db
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     networks:
       - app-network
 
@@ -61,13 +63,18 @@ services:
     image: postgres:16
     restart: always
     environment:
-      POSTGRES_USER: ${DB_USER:-card-game}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
-      POSTGRES_DB: ${DB_NAME:-card-game-db}
+      POSTGRES_USER: card-game
+      POSTGRES_PASSWORD: changeme
+      POSTGRES_DB: card-game-db
     volumes:
       - db-data:/var/lib/postgresql/data
     networks:
       - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U card-game -d card-game-db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   # Selenium Grid Hub
   selenium-hub:
