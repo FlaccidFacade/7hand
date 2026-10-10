@@ -14,7 +14,7 @@ jobs:
 
     steps:
       - name: Label PRs based on changed files
-        uses: actions/labeler@v6
+        uses: actions/labeler@v7
         with:
           # GitHub automatically provides the GITHUB_TOKEN secret to every
           # workflow run. It is available by default and is used for
