@@ -40,6 +40,7 @@
 .btn-secondary {
     background: rgba(255, 255, 255, 0.2);
     color: #ffffff;
+    font-size: clamp(1.25rem, 2.5vw, 2rem);
 }
 
 .btn-icon:hover,
@@ -260,7 +261,20 @@
     padding: 1% 2.5%;
     border-radius: 8px;
     letter-spacing: 0.125rem;
+    /* NEW: makes the button a flex item inside the pill */
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    max-width: 100%;
 }
+
+.lobby-code .btn-copy-link {
+    margin-left: auto;          /* pushes it to the right edge */
+    font-size: clamp(0.65rem, 1.4vw, 0.85rem);  /* shrink vs. the huge code text */
+    white-space: nowrap;
+    cursor: pointer; 
+}
+
 
 /* Responsive - Tablet and below */
 @media (max-width: 811px) {

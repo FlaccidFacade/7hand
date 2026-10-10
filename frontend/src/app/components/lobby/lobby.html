@@ -93,12 +93,19 @@
     <div class="table-edge"></div>
   </div>
 
-  <div class="lobby-footer">
-    <div class="game-info">
+  <div class="lobby-footer" style="display: flex; flex-direction: row; gap: 2rem;">
+    <div class="lobby-people" style="flex: 1; display: flex; flex-direction: column; gap: 0.5rem;">
       <span class="info-label">Share this lobby code with friends:</span>
-      <span class="lobby-code">   <button class="btn-secondary" (click)="copyLobbyLink()">
+      <span class="lobby-code">{{ lobbyId }}<button class="btn-copy-link" (click)="copyLobbyLink()">
         📋 Copy Link
-      </button>{{ lobbyId }}</span>
+      </button></span>
+      
+    </div>
+    <div class="lobby-bots" style="flex: 1; display: flex; flex-direction: column; gap: 0.5rem;">
+      <span class="info-label">Play against the computer:</span>
+      <button class="btn-secondary" (click)="startGame()">
+        Start BotGame
+      </button>
     </div>
   </div>
 </div>
