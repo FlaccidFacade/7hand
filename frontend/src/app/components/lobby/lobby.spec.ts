@@ -656,7 +656,7 @@ describe('Lobby', () => {
 
         press(el().querySelector('.space[data-player-id="bot-1"] .meld'));
 
-        expect(el().querySelectorAll('.space[data-player-id="bot-1"] .meld app-playing-card').length).toBe(4);
+        expect(el().querySelectorAll('.space[data-player-id="bot-1"] .meld .meld-card').length).toBe(4);
         expect(component.myHand.map(c => c.id)).toEqual(['2c']);
         expect(component.selectedCardIds).toEqual([]);
       });

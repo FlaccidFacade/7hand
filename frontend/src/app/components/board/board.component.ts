@@ -1,7 +1,6 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Card, Meld } from '../../services/lobby.service';
-import { PlayingCardComponent, Rank, Suit } from '../playing-card/playing-card.component';
 import { isJoker, rankName, runCardValue } from '../../services/melds';
 
 export interface BoardSpace {
@@ -20,11 +19,11 @@ export interface MeldTarget {
 
 const SUIT_SYMBOLS: Record<string, string> = { hearts: '♥', diamonds: '♦', clubs: '♣', spades: '♠' };
 
-/** The lobby's table: one space per player, holding the sets and runs that player has played. */
+/** The lobby's table: one space per player, holding the sets and runs that player has played, as text. */
 @Component({
   selector: 'app-board',
   standalone: true,
-  imports: [CommonModule, PlayingCardComponent],
+  imports: [CommonModule],
   templateUrl: './board.component.html',
   styleUrls: ['./board.component.css']
 })
@@ -57,12 +56,17 @@ export class BoardComponent {
     return `Joker standing in for ${stands}`;
   }
 
-  suitOf(card: Card): Suit {
-    return card.suit as Suit;
+  // The table shows plain text (rank and suit), not card images
+  cardText(card: Card): string {
+    return isJoker(card) ? 'Joker' : `${card.rank}${SUIT_SYMBOLS[card.suit] ?? ''}`;
   }
 
-  rankOf(card: Card): Rank {
-    return card.rank as Rank;
+  isRed(card: Card): boolean {
+    return card.suit === 'hearts' || card.suit === 'diamonds';
+  }
+
+  isJoker(card: Card): boolean {
+    return isJoker(card);
   }
 
   trackSpace(_index: number, space: BoardSpace): string {

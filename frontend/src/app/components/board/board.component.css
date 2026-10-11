@@ -76,12 +76,26 @@
 .meld-cards {
   display: flex;
   flex-wrap: wrap;
-  gap: 2px;
+  gap: 4px;
 }
 
-.mini-card {
-  display: block;
-  zoom: 0.42;
+.meld-card {
+  padding: 0.1rem 0.45rem;
+  border-radius: 4px;
+  background: #fff;
+  color: #222;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.meld-card.red {
+  color: #c0392b;
+}
+
+.meld-card.joker {
+  background: #f1c40f;
+  font-size: 0.8rem;
 }
 
 .empty {

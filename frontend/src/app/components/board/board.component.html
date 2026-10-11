@@ -23,15 +23,13 @@
       >
         <span class="meld-label">{{ meldLabel(meld) }}</span>
         <span class="meld-cards">
-          <app-playing-card
+          <span
+            class="meld-card"
             *ngFor="let card of meld.cards; let i = index"
-            class="mini-card"
-            [suit]="suitOf(card)"
-            [rank]="rankOf(card)"
-            [draggable]="false"
-            [flippable]="false"
+            [class.red]="isRed(card)"
+            [class.joker]="isJoker(card)"
             [attr.title]="cardTitle(meld, i)"
-          ></app-playing-card>
+          >{{ cardText(card) }}</span>
         </span>
       </button>
       <p class="empty" *ngIf="space.melds.length === 0">Nothing played yet</p>

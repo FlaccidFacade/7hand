@@ -45,8 +45,26 @@ describe('BoardComponent', () => {
   it('should show the sets and runs a player has played', () => {
     const melds = el.querySelectorAll('.space[data-player-id="me"] .meld');
     expect(melds.length).toBe(2);
-    expect(melds[0].querySelectorAll('app-playing-card').length).toBe(3);
-    expect(melds[1].querySelectorAll('app-playing-card').length).toBe(4);
+    expect(melds[0].querySelectorAll('.meld-card').length).toBe(3);
+    expect(melds[1].querySelectorAll('.meld-card').length).toBe(4);
+  });
+
+  it('should show only rank and suit text, not card images', () => {
+    const texts = (index: number) =>
+      Array.from(el.querySelectorAll('.space[data-player-id="me"] .meld')[index].querySelectorAll('.meld-card')).map(
+        card => card.textContent?.trim()
+      );
+
+    expect(el.querySelector('app-board app-playing-card, .playing-card')).toBeNull();
+    expect(texts(0)).toEqual(['7♥', '7♠', 'Joker']);
+    expect(texts(1)).toEqual(['4♥', 'Joker', '6♥', '7♥']);
+  });
+
+  it('should colour red suits red', () => {
+    const cards = el.querySelectorAll('.space[data-player-id="me"] .meld')[0].querySelectorAll('.meld-card');
+    expect(cards[0].classList).toContain('red');
+    expect(cards[1].classList).not.toContain('red');
+    expect(cards[2].classList).toContain('joker');
   });
 
   it('should show an empty space and a qualified badge where appropriate', () => {
