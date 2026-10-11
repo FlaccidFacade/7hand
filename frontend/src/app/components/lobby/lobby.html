@@ -6,14 +6,69 @@
     <div class="table-surface">
       <!-- Center area with game info -->
       <div class="table-center">
-        <div class="game-status" *ngIf="players.length < 2">
-          Waiting for players...
+        <div class="game-status" *ngIf="statusLabel">
+          {{ statusLabel }}
         </div>
-        <div class="game-status" *ngIf="players.length >= 2 && !isHost">
-          Waiting for host to start
+        <div class="table-cards" *ngIf="showTableCards">
+          <div class="pile draw-pile" [attr.aria-label]="'Draw pile, ' + drawPileCount + ' cards'">
+            <button
+              type="button"
+              class="card-slot selection-ring"
+              [class.selected]="selectedSource === 'deck'"
+              [disabled]="!canDrawNow"
+              [attr.aria-pressed]="selectedSource === 'deck'"
+              aria-label="Mystery card from the deck"
+              (click)="selectSource('deck')"
+            >
+              <span class="deck-stack">
+                <app-playing-card
+                  *ngFor="let layer of [0, 1, 2]"
+                  class="deck-layer"
+                  [style.transform]="'translate(' + layer * 3 + 'px, ' + layer * -3 + 'px)'"
+                  [faceUp]="false"
+                  [draggable]="false"
+                  [flippable]="false"
+                ></app-playing-card>
+              </span>
+            </button>
+            <span class="pile-label">Deck ({{ drawPileCount }})</span>
+          </div>
+          <div class="pile discard-pile" aria-label="Top card of the discard pile">
+            <button
+              type="button"
+              class="card-slot selection-ring"
+              [class.selected]="selectedSource === 'discard'"
+              [disabled]="!(canDrawNow || canThrow)"
+              [attr.aria-pressed]="selectedSource === 'discard'"
+              aria-label="Face-up card on the discard pile"
+              (click)="onDiscardPileClick()"
+            >
+              <app-playing-card
+                *ngIf="topDiscard; let card"
+                class="top-card"
+                [suit]="suitOf(card)"
+                [rank]="rankOf(card)"
+                [draggable]="false"
+                [flippable]="false"
+              ></app-playing-card>
+              <span class="empty-pile" *ngIf="!topDiscard"></span>
+            </button>
+            <span class="pile-label">Discard</span>
+          </div>
         </div>
+        <div class="turn-hint" *ngIf="turnHint">{{ turnHint }}</div>
+        <div class="requirement" *ngIf="requirementLabel">{{ requirementLabel }}</div>
+        <button
+          type="button"
+          class="btn-confirm-move"
+          *ngIf="showTableCards && isMyTurn"
+          [disabled]="!canConfirm"
+          (click)="confirmAction()"
+        >
+          {{ confirmLabel }}
+        </button>
         <button 
-          *ngIf="isHost && players.length >= 2" 
+          *ngIf="!isStarted && isHost && players.length >= 2" 
           class="btn-start-game"
           (click)="startGame()"
         >
@@ -27,6 +82,7 @@
           <div class="player-avatar">{{ player.displayName.charAt(0).toUpperCase() }}</div>
           <div class="player-name">{{ player.displayName }}</div>
           <div class="host-badge" *ngIf="player.id === players[0]?.id">HOST</div>
+          <div class="bot-badge" *ngIf="player.isBot">BOT</div>
         </div>
         <div class="empty-spot" *ngIf="!getPlayerAtPosition(0)">
           <div class="empty-icon">+</div>
@@ -38,6 +94,7 @@
           <div class="player-avatar">{{ player.displayName.charAt(0).toUpperCase() }}</div>
           <div class="player-name">{{ player.displayName }}</div>
           <div class="host-badge" *ngIf="player.id === players[0]?.id">HOST</div>
+          <div class="bot-badge" *ngIf="player.isBot">BOT</div>
         </div>
         <div class="empty-spot" *ngIf="!getPlayerAtPosition(1)">
           <div class="empty-icon">+</div>
@@ -49,6 +106,7 @@
           <div class="player-avatar">{{ player.displayName.charAt(0).toUpperCase() }}</div>
           <div class="player-name">{{ player.displayName }}</div>
           <div class="host-badge" *ngIf="player.id === players[0]?.id">HOST</div>
+          <div class="bot-badge" *ngIf="player.isBot">BOT</div>
         </div>
         <div class="empty-spot" *ngIf="!getPlayerAtPosition(2)">
           <div class="empty-icon">+</div>
@@ -60,6 +118,7 @@
           <div class="player-avatar">{{ player.displayName.charAt(0).toUpperCase() }}</div>
           <div class="player-name">{{ player.displayName }}</div>
           <div class="host-badge" *ngIf="player.id === players[0]?.id">HOST</div>
+          <div class="bot-badge" *ngIf="player.isBot">BOT</div>
         </div>
         <div class="empty-spot" *ngIf="!getPlayerAtPosition(3)">
           <div class="empty-icon">+</div>
@@ -71,6 +130,7 @@
           <div class="player-avatar">{{ player.displayName.charAt(0).toUpperCase() }}</div>
           <div class="player-name">{{ player.displayName }}</div>
           <div class="host-badge" *ngIf="player.id === players[0]?.id">HOST</div>
+          <div class="bot-badge" *ngIf="player.isBot">BOT</div>
         </div>
         <div class="empty-spot" *ngIf="!getPlayerAtPosition(4)">
           <div class="empty-icon">+</div>
@@ -82,6 +142,7 @@
           <div class="player-avatar">{{ player.displayName.charAt(0).toUpperCase() }}</div>
           <div class="player-name">{{ player.displayName }}</div>
           <div class="host-badge" *ngIf="player.id === players[0]?.id">HOST</div>
+          <div class="bot-badge" *ngIf="player.isBot">BOT</div>
         </div>
         <div class="empty-spot" *ngIf="!getPlayerAtPosition(5)">
           <div class="empty-icon">+</div>
@@ -93,20 +154,93 @@
     <div class="table-edge"></div>
   </div>
 
-  <div class="lobby-footer" style="display: flex; flex-direction: row; gap: 2rem;">
-    <div class="lobby-people" style="flex: 1; display: flex; flex-direction: column; gap: 0.5rem;">
-      <span class="info-label">Share this lobby code with friends:</span>
-      <span class="lobby-code">{{ lobbyId }}<button class="btn-copy-link" (click)="copyLobbyLink()">
-        📋 Copy Link
-      </button></span>
-      
+  <app-board
+    *ngIf="showTableCards"
+    [spaces]="boardSpaces"
+    [targetable]="canAddToMeld"
+    (meldSelected)="addSelectedTo($event)"
+  ></app-board>
+
+  <div class="hand-actions" *ngIf="showTableCards && canDiscardNow">
+    <div class="staged-melds" *ngIf="stagedMelds.length > 0">
+      <span class="staged-meld" *ngFor="let group of stagedMelds; let i = index">
+        <strong>{{ group.type === 'set' ? 'Set' : 'Run' }}:</strong>
+        <span *ngFor="let id of group.cardIds"> {{ cardText(id) }}</span>
+        <button type="button" class="btn-unstage" [attr.aria-label]="'Remove ' + group.type" (click)="unstageMeld(i)">×</button>
+      </span>
     </div>
-    <div class="lobby-bots" style="flex: 1; display: flex; flex-direction: column; gap: 0.5rem;">
-      <span class="info-label">Play against the computer:</span>
-      <button class="btn-secondary" (click)="startGame()">
-        Start Bot Game
+    <div class="action-buttons">
+      <button type="button" class="btn-stage" [disabled]="!canStageSet" (click)="stageMeld('set')">Stage as set</button>
+      <button type="button" class="btn-stage" [disabled]="!canStageRun" (click)="stageMeld('run')">Stage as run</button>
+      <button type="button" class="btn-lay-down" [disabled]="!canLayDown" (click)="layDown()">
+        Lay down {{ stagedMelds.length > 0 ? '(' + stagedMelds.length + ')' : '' }}
       </button>
+    </div>
+    <div class="action-hint" *ngIf="canAddToMeld">Select cards, then click a set or run on the table to add them to it</div>
+    <div class="action-error" *ngIf="actionError" role="alert">{{ actionError }}</div>
+  </div>
+
+  <div class="player-hand" *ngIf="showTableCards && myHand.length > 0" aria-label="Your hand">
+    <button
+      type="button"
+      *ngFor="let card of myHand; trackBy: trackCard"
+      class="hand-card card-slot selection-ring"
+      [class.selected]="isSelected(card)"
+      [class.staged]="isStaged(card)"
+      [class.dragging]="card.id === dragCardId"
+      [class.inactive]="!canDiscardNow"
+      [style.transform]="card.id === dragCardId ? 'translate(' + dragDx + 'px, -14px) scale(1.06)' : null"
+      [attr.data-card-id]="card.id"
+      [attr.aria-pressed]="isSelected(card)"
+      [attr.aria-disabled]="!canDiscardNow || isStaged(card)"
+      [attr.aria-label]="card.rank + ' of ' + card.suit"
+      (pointerdown)="onHandPointerDown($event, card)"
+      (click)="selectHandCard(card)"
+    >
+      <div class="flip-card" *ngIf="card.id === flipCardId; else plainCard">
+        <app-playing-card
+          class="flip-front"
+          [suit]="suitOf(card)"
+          [rank]="rankOf(card)"
+          [draggable]="false"
+          [flippable]="false"
+        ></app-playing-card>
+        <app-playing-card
+          class="flip-back"
+          [faceUp]="false"
+          [draggable]="false"
+          [flippable]="false"
+        ></app-playing-card>
+      </div>
+      <ng-template #plainCard>
+        <app-playing-card
+          [suit]="suitOf(card)"
+          [rank]="rankOf(card)"
+          [draggable]="false"
+          [flippable]="false"
+        ></app-playing-card>
+      </ng-template>
+    </button>
+  </div>
+
+  <div class="lobby-footer" style="display: flex; flex-direction: row; gap: 2rem;">
+    <ng-container *ngIf="!isStarted">
+      <div class="lobby-people" style="flex: 1; display: flex; flex-direction: column; gap: 0.5rem;">
+        <span class="info-label">Share this lobby code with friends:</span>
+        <span class="lobby-code">{{ lobbyId }}<button class="btn-copy-link" (click)="copyLobbyLink()">
+          📋 Copy Link
+        </button></span>
+      </div>
+      <div class="lobby-bots" *ngIf="canStartBotGame" style="flex: 1; display: flex; flex-direction: column; gap: 0.5rem;">
+        <span class="info-label">Play against the computer:</span>
+        <button class="btn-secondary" (click)="startBotGame()">
+          Start Bot Game
+        </button>
+      </div>
+    </ng-container>
+    <div class="lobby-bots" *ngIf="isStarted" style="flex: 1; display: flex; flex-direction: column; gap: 0.5rem;">
+      <span class="info-label">{{ isBotGame ? 'Playing against the computer' : 'Game in progress' }}</span>
+      <span class="info-label">{{ handLabel }}</span>
     </div>
   </div>
 </div>
-

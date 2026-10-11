@@ -8,19 +8,50 @@ export interface LobbyPlayer {
   username: string;
   displayName: string;
   position?: number;
+  isBot?: boolean;
 }
 
 export interface Lobby {
   lobbyId: string;
   users: LobbyPlayer[];
-  gamestate?: any;
+  gamestate?: GameState | null;
   started?: boolean;
 }
 
+export interface Card {
+  id: string;
+  suit: string;
+  rank: string;
+}
+
+export interface Meld {
+  id: string;
+  type: 'set' | 'run';
+  rank?: string;
+  suit?: string;
+  // Value of the first card of a run (A = 1 when low); an ace is 14 at the top end
+  low?: number;
+  cards: Card[];
+}
+
 export interface GameState {
+  players?: LobbyPlayer[];
+  phase?: string;
+  botGame?: boolean;
+  handNumber?: number;
+  totalHands?: number;
+  turnOrder?: string[];
   currentTurn?: string;
-  players: LobbyPlayer[];
-  // Add more game state fields as needed
+  turnPhase?: string;
+  hands?: Record<string, Card[]>;
+  drawPile?: Card[];
+  discardPile?: Card[];
+  scores?: Record<string, number>;
+  // The table: one space per player holding the sets and runs that player has laid down
+  board?: Record<string, Meld[]>;
+  qualified?: Record<string, boolean>;
+  winnerId?: string;
+  startedAt?: string;
 }
 
 @Injectable({
@@ -51,7 +82,7 @@ export class LobbyService {
    */
   createLobby(userId: string): Observable<Lobby> {
     return this.http.post<Lobby>('/api/lobby', { userId }).pipe(
-      tap(lobby => this.currentLobby$.next(lobby))
+      tap(lobby => this.applyLobby(lobby))
     );
   }
 
@@ -60,7 +91,7 @@ export class LobbyService {
    */
   joinLobby(lobbyId: string, userId: string): Observable<Lobby> {
     return this.http.post<Lobby>(`/api/lobby/${lobbyId}/join`, { userId }).pipe(
-      tap(lobby => this.currentLobby$.next(lobby))
+      tap(lobby => this.applyLobby(lobby))
     );
   }
 
@@ -69,8 +100,25 @@ export class LobbyService {
    */
   getLobby(lobbyId: string): Observable<Lobby> {
     return this.http.get<Lobby>(`/api/lobby/${lobbyId}`).pipe(
-      tap(lobby => this.currentLobby$.next(lobby))
+      tap(lobby => this.applyLobby(lobby))
     );
+  }
+
+  /**
+   * Start a game against computer players. The server seats the bots,
+   * deals the cards and returns the started lobby.
+   */
+  startBotGame(lobbyId: string, userId: string): Observable<Lobby> {
+    return this.http.post<Lobby>(`/api/lobby/${lobbyId}/start-bot-game`, { userId }).pipe(
+      tap(lobby => this.applyLobby(lobby))
+    );
+  }
+
+  /**
+   * Persist the current game state on the server (periodic save)
+   */
+  saveGameState(lobbyId: string, userId: string, gamestate: GameState): Observable<any> {
+    return this.http.put(`/api/lobby/${lobbyId}/gamestate`, { userId, gamestate });
   }
 
   /**
@@ -102,7 +150,7 @@ export class LobbyService {
    * Update local lobby state
    */
   updateLobby(lobby: Lobby): void {
-    this.currentLobby$.next(lobby);
+    this.applyLobby(lobby);
   }
 
   /**
@@ -139,5 +187,12 @@ export class LobbyService {
   clearLobby(): void {
     this.currentLobby$.next(null);
     this.gameState$.next(null);
+  }
+
+  private applyLobby(lobby: Lobby): void {
+    this.currentLobby$.next(lobby);
+    if (lobby.gamestate) {
+      this.gameState$.next(lobby.gamestate);
+    }
   }
 }

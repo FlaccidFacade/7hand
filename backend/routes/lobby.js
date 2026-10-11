@@ -1,5 +1,5 @@
 const express = require('express');
-const { saveLobbyToDb, removeLobbyFromDb, loadLobbyFromDb } = require('../lobby');
+const { serializeLobby, saveLobbyToDb, createAndSaveLobby, removeLobbyFromDb, loadLobbyFromDb } = require('../lobby');
 const { loadUserFromDb, updateUserActivity } = require('../user');
 const logger = require('../logger');
 
@@ -19,7 +19,7 @@ const MAX_MESSAGES_PER_USER = 100;
 // Cleanup old messages periodically
 setInterval(() => {
   cleanupOldSignalingMessages();
-}, 5 * 60 * 1000); // Every 5 minutes
+}, 5 * 60 * 1000).unref(); // Every 5 minutes
 
 function cleanupOldSignalingMessages() {
   signalingMessages.forEach((lobbyMessages, lobbyId) => {
@@ -30,6 +30,18 @@ function cleanupOldSignalingMessages() {
       }
     });
   });
+}
+
+// Resolves a public lobby code to a live lobby (memory first, then DB) and counts the access as activity
+async function findLobby(code) {
+  let lobby = lobbyManager.getLobby(code);
+  if (!lobby) {
+    const dbLobby = await loadLobbyFromDb(code);
+    if (!dbLobby) return null;
+    lobby = lobbyManager.restoreLobby(dbLobby);
+  }
+  lobby.touch();
+  return lobby;
 }
 
 function setManagers(lobby, user) {
@@ -63,10 +75,9 @@ router.post('/', async (req, res) => {
   user.updateActivity();
   await updateUserActivity(userId);
   
-  const lobby = lobbyManager.createLobby(user.toSafeObject());
-  await saveLobbyToDb(lobby);
-  logger.info(`Lobby created: ${lobby.id} by user ${user.username}`);
-  res.json({ lobbyId: lobby.id, users: lobby.users });
+  const lobby = await createAndSaveLobby(lobbyManager, user.toSafeObject());
+  logger.info(`Lobby created: ${lobby.code} by user ${user.username}`);
+  res.json(serializeLobby(lobby));
 });
 
 router.post('/:lobbyId/join', async (req, res) => {
@@ -97,39 +108,78 @@ router.post('/:lobbyId/join', async (req, res) => {
   user.updateActivity();
   await updateUserActivity(userId);
   
-  const lobby = lobbyManager.getLobby(lobbyId);
+  const lobby = await findLobby(lobbyId);
   if (!lobby) return res.status(404).json({ error: 'Lobby not found' });
   
   lobby.addUser(user.toSafeObject());
   await saveLobbyToDb(lobby);
-  logger.info(`User ${user.username} joined lobby ${lobby.id}`);
-  res.json({ lobbyId: lobby.id, users: lobby.users });
+  logger.info(`User ${user.username} joined lobby ${lobby.code}`);
+  res.json(serializeLobby(lobby));
 });
 
 router.get('/:lobbyId', async (req, res) => {
   const { lobbyId } = req.params;
-  let lobby = lobbyManager.getLobby(lobbyId);
-  if (!lobby) {
-    // Try to load from DB if not in memory
-    const dbLobby = await loadLobbyFromDb(lobbyId);
-    if (!dbLobby) return res.status(404).json({ error: 'Lobby not found' });
-    lobby = lobbyManager.createLobby({ id: 'restored' }); // placeholder user
-    lobby.id = dbLobby.id;
-    lobby.users = dbLobby.users;
-    lobby.gamestate = dbLobby.gamestate;
-    lobby.createdAt = dbLobby.created_at;
-    lobby.lastActivity = dbLobby.last_activity;
-    lobby.started = dbLobby.started;
+  const lobby = await findLobby(lobbyId);
+  if (!lobby) return res.status(404).json({ error: 'Lobby not found' });
+  await saveLobbyToDb(lobby);
+  res.json(serializeLobby(lobby));
+});
+
+// Start a game against computer players (host only, no other humans seated)
+router.post('/:lobbyId/start-bot-game', async (req, res) => {
+  const { userId } = req.body;
+  const { lobbyId } = req.params;
+
+  if (!userId) return res.status(400).json({ error: 'User ID required' });
+
+  const lobby = await findLobby(lobbyId);
+  if (!lobby) return res.status(404).json({ error: 'Lobby not found' });
+  if (lobby.users[0]?.id !== userId) {
+    return res.status(403).json({ error: 'Only the host can start a bot game' });
   }
-  res.json({ lobbyId: lobby.id, users: lobby.users });
+  if (lobby.started) return res.status(409).json({ error: 'Game already started' });
+  if (lobby.humanUsers.length > 1) {
+    return res.status(409).json({ error: 'Bot games can only be started without other players' });
+  }
+
+  lobby.startBotGame();
+  await saveLobbyToDb(lobby);
+  logger.info(`Bot game started in lobby ${lobby.code} by user ${userId}`);
+  res.json(serializeLobby(lobby));
+});
+
+// Periodic client-side save of the game state
+router.put('/:lobbyId/gamestate', async (req, res) => {
+  const { userId, gamestate } = req.body;
+  const { lobbyId } = req.params;
+
+  if (!userId) return res.status(400).json({ error: 'User ID required' });
+  if (!gamestate || typeof gamestate !== 'object' || Array.isArray(gamestate)) {
+    return res.status(400).json({ error: 'Invalid game state' });
+  }
+
+  const lobby = await findLobby(lobbyId);
+  if (!lobby) return res.status(404).json({ error: 'Lobby not found' });
+  if (!lobby.users.some(u => u.id === userId)) {
+    return res.status(403).json({ error: 'Not a member of this lobby' });
+  }
+  if (!lobby.started) return res.status(409).json({ error: 'Game not started' });
+
+  lobby.gamestate = gamestate;
+  lobby.lastActivity = new Date();
+  await saveLobbyToDb(lobby);
+  res.json({ success: true });
 });
 
 router.delete('/:lobbyId', async (req, res) => {
   const { lobbyId } = req.params;
-  lobbyManager.removeLobby(lobbyId);
-  await removeLobbyFromDb(lobbyId);
-  // Clean up signaling messages
-  signalingMessages.delete(lobbyId);
+  const lobby = await findLobby(lobbyId);
+  if (lobby) {
+    lobbyManager.removeLobby(lobby.code);
+    await removeLobbyFromDb(lobby.id);
+    // Clean up signaling messages
+    signalingMessages.delete(lobbyId);
+  }
   res.json({ success: true });
 });
 
@@ -172,6 +222,8 @@ router.post('/:lobbyId/signal', (req, res) => {
 // Get signaling messages for a user
 router.get('/:lobbyId/signal/:userId', (req, res) => {
   const { lobbyId, userId } = req.params;
+
+  lobbyManager.getLobby(lobbyId)?.touch();
   
   const lobbyMessages = signalingMessages.get(lobbyId);
   if (!lobbyMessages || !lobbyMessages.has(userId)) {
@@ -266,11 +318,11 @@ router.post('/:lobbyId/leave', async (req, res) => {
   
   if (!userId) return res.status(400).json({ error: 'User ID required' });
   
-  const lobby = lobbyManager.getLobby(lobbyId);
+  const lobby = await findLobby(lobbyId);
   if (!lobby) return res.status(404).json({ error: 'Lobby not found' });
   
   // Remove user from lobby
-  lobby.users = lobby.users.filter(u => u.id !== userId);
+  lobby.removeUser(userId);
   await saveLobbyToDb(lobby);
   
   logger.info(`User ${userId} left lobby ${lobbyId}`);

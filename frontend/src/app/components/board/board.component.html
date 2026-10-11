@@ -1,0 +1,40 @@
+<section class="board" aria-label="The table">
+  <div
+    class="space"
+    *ngFor="let space of spaces; trackBy: trackSpace"
+    [class.mine]="space.isMe"
+    [attr.data-player-id]="space.playerId"
+  >
+    <header class="space-header">
+      <span class="space-name">{{ space.name }}</span>
+      <span class="badge" *ngIf="space.qualified">Qualified</span>
+    </header>
+
+    <div class="melds">
+      <button
+        type="button"
+        class="meld"
+        *ngFor="let meld of space.melds; trackBy: trackMeld"
+        [class.targetable]="targetable"
+        [attr.data-meld-id]="meld.id"
+        [attr.aria-disabled]="!targetable"
+        [attr.aria-label]="meldLabel(meld)"
+        (click)="onMeldClick(space, meld)"
+      >
+        <span class="meld-label">{{ meldLabel(meld) }}</span>
+        <span class="meld-cards">
+          <app-playing-card
+            *ngFor="let card of meld.cards; let i = index"
+            class="mini-card"
+            [suit]="suitOf(card)"
+            [rank]="rankOf(card)"
+            [draggable]="false"
+            [flippable]="false"
+            [attr.title]="cardTitle(meld, i)"
+          ></app-playing-card>
+        </span>
+      </button>
+      <p class="empty" *ngIf="space.melds.length === 0">Nothing played yet</p>
+    </div>
+  </div>
+</section>

@@ -180,4 +180,52 @@ describe('LobbyService', () => {
       }
     });
   });
+
+  it('should start a bot game and publish lobby and game state', () => {
+    const gamestate: GameState = { phase: 'playing', handNumber: 1, totalHands: 7, currentTurn: 'host' };
+    const mockLobby: Lobby = {
+      lobbyId: 'lobby-1',
+      started: true,
+      users: [
+        { id: 'host', username: 'host', displayName: 'Host', position: 0 },
+        { id: 'bot-1', username: 'bot1', displayName: 'Bot 1', position: 1, isBot: true }
+      ],
+      gamestate
+    };
+    const lobbyEmissions: (Lobby | null)[] = [];
+    const stateEmissions: (GameState | null)[] = [];
+    service.getCurrentLobby().subscribe(l => lobbyEmissions.push(l));
+    service.getGameState().subscribe(s => stateEmissions.push(s));
+
+    service.startBotGame('lobby-1', 'host').subscribe();
+
+    const req = httpMock.expectOne('/api/lobby/lobby-1/start-bot-game');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ userId: 'host' });
+    req.flush(mockLobby);
+
+    expect(lobbyEmissions[lobbyEmissions.length - 1]).toEqual(mockLobby);
+    expect(stateEmissions[stateEmissions.length - 1]).toEqual(gamestate);
+  });
+
+  it('should save game state', () => {
+    const gamestate: GameState = { phase: 'playing' };
+    service.saveGameState('lobby-1', 'host', gamestate).subscribe();
+
+    const req = httpMock.expectOne('/api/lobby/lobby-1/gamestate');
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual({ userId: 'host', gamestate });
+    req.flush({ success: true });
+  });
+
+  it('should publish game state when loading a started lobby', () => {
+    const gamestate: GameState = { phase: 'playing' };
+    const stateEmissions: (GameState | null)[] = [];
+    service.getGameState().subscribe(s => stateEmissions.push(s));
+
+    service.getLobby('lobby-1').subscribe();
+    httpMock.expectOne('/api/lobby/lobby-1').flush({ lobbyId: 'lobby-1', users: [], started: true, gamestate });
+
+    expect(stateEmissions[stateEmissions.length - 1]).toEqual(gamestate);
+  });
 });

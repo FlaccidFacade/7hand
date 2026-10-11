@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const { connect, disconnect } = require('./db');
-const { LobbyManager, cleanupInactiveLobbies } = require('./lobby');
+const { LobbyManager, CODE_TTL_MINUTES, cleanupInactiveLobbies } = require('./lobby');
 const { UserManager } = require('./user');
 const logger = require('./logger');
 const { execSync } = require('child_process');
@@ -26,6 +26,7 @@ const userManager = new UserManager();
 lobbyRoutes.setManagers(lobbyManager, userManager);
 userRoutes.setUserManager(userManager);
 authRoutes.setUserManager(userManager);
+authRoutes.setLobbyManager(lobbyManager);
 
 // Run DB migrations automatically on startup
 try {
@@ -36,10 +37,11 @@ try {
   process.exit(1);
 }
 
-// Periodic cleanup of inactive lobbies every 30 minutes
+// Lobby codes expire after 30 minutes of inactivity; sweep memory and the DB every 5 minutes
 const timer = setInterval(() => {
-  cleanupInactiveLobbies(2).catch(err => logger.error('Cleanup failed', err));
-}, 30 * 60 * 1000);
+  lobbyManager.removeExpired();
+  cleanupInactiveLobbies(CODE_TTL_MINUTES).catch(err => logger.error('Cleanup failed', err));
+}, 5 * 60 * 1000);
 
 // Root endpoint
 app.get('/', (req, res) => {

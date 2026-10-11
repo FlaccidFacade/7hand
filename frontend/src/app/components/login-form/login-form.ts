@@ -41,8 +41,8 @@ export class LoginForm {
           if (response.success) {
             console.log('Login successful:', response.user);
             this.loginSuccess.emit();
-            // Navigate to lobby
-            this.router.navigate(['/lobby/main']);
+            // Navigate to the lobby created for this login
+            this.router.navigate(['/lobby', response.lobby?.lobbyId ?? 'main']);
           }
         },
         error: (error) => {

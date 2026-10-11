@@ -5,3 +5,68 @@ body {
 }
 
 /* You can add global styles to this file, and also import other style files */
+
+/* Selection ring: a comet of light with a rainbow trail circling the card */
+@property --ring-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@keyframes ring-spin {
+  to {
+    --ring-angle: 360deg;
+  }
+}
+
+.selection-ring {
+  position: relative;
+  display: block;
+  margin: 0;
+  padding: 4px;
+  border: none;
+  border-radius: 12px;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+}
+
+.selection-ring:disabled {
+  cursor: default;
+}
+
+.selection-ring > * {
+  position: relative;
+  z-index: 1;
+  display: block;
+}
+
+.selection-ring.selected {
+  box-shadow: 0 0 14px 3px rgba(255, 255, 255, 0.7), 0 0 30px 8px rgba(170, 110, 255, 0.45);
+}
+
+.selection-ring.selected::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  background: conic-gradient(
+    from var(--ring-angle),
+    transparent 0deg,
+    transparent 120deg,
+    #ff3b3b 180deg,
+    #ffa534 220deg,
+    #ffe53b 255deg,
+    #3bff6b 290deg,
+    #3bc8ff 320deg,
+    #a43bff 345deg,
+    #ffffff 360deg
+  );
+  animation: ring-spin 1.6s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .selection-ring.selected::before {
+    animation: none;
+  }
+}

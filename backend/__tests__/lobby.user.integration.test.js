@@ -51,7 +51,7 @@ app.post('/api/lobby', async (req, res) => {
   
   const lobby = lobbyManager.createLobby(user.toSafeObject());
   await saveLobbyToDb(lobby);
-  res.json({ lobbyId: lobby.id, users: lobby.users });
+  res.json({ lobbyId: lobby.code, users: lobby.users });
 });
 
 app.post('/api/lobby/:lobbyId/join', async (req, res) => {
@@ -87,7 +87,7 @@ app.post('/api/lobby/:lobbyId/join', async (req, res) => {
   
   lobby.addUser(user.toSafeObject());
   await saveLobbyToDb(lobby);
-  res.json({ lobbyId: lobby.id, users: lobby.users });
+  res.json({ lobbyId: lobby.code, users: lobby.users });
 });
 
 describe('Lobby and User Integration', () => {

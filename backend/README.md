@@ -17,6 +17,7 @@ backend/
 ├── index.js                    # Main application entry point
 ├── user.js                     # User model and management
 ├── lobby.js                    # Lobby model and management
+├── game.js                     # Deck creation, shuffling and dealing
 ├── db.js                       # Database connection and pooling
 ├── health.js                   # Health check functionality
 ├── logger.js                   # Winston logger configuration
@@ -28,6 +29,8 @@ backend/
     ├── user.db.test.js
     ├── user.api.test.js
     ├── lobby.test.js
+    ├── lobby.routes.test.js
+    ├── game.test.js
     ├── lobby.db.test.js
     ├── lobby.user.integration.test.js
     ├── health.test.js
@@ -166,7 +169,7 @@ For detailed user documentation, see [USER_DOCUMENTATION.md](./USER_DOCUMENTATIO
 **Response:**
 ```json
 {
-  "lobbyId": "760e8500-e29b-41d4-a716-446655440001",
+  "lobbyId": "K7QX2M",
   "users": [
     {
       "id": "550e8400-e29b-41d4-a716-446655440000",
@@ -176,6 +179,10 @@ For detailed user documentation, see [USER_DOCUMENTATION.md](./USER_DOCUMENTATIO
   ]
 }
 ```
+
+A lobby is also created automatically on every successful login (`POST /api/auth/login` returns it as `lobby`).
+
+**Lobby codes:** `lobbyId` is a temporary 6-character code (letters and digits, no `0/O/1/I`, case-insensitive), not the lobby's internal UUID. The code stays valid while the lobby is in use and expires after 30 minutes without activity (create, join, leave, lookups, game-state saves and signaling polls all count). Expired codes return `404`, and expired lobbies are removed from memory and the database every 5 minutes.
 
 #### Join Lobby
 `POST /api/lobby/:lobbyId/join`
@@ -189,6 +196,24 @@ For detailed user documentation, see [USER_DOCUMENTATION.md](./USER_DOCUMENTATIO
 
 #### Get Lobby
 `GET /api/lobby/:lobbyId`
+
+Lobby responses (create, join, get, start-bot-game) have the shape `{ lobbyId, users, started, gamestate }`.
+
+#### Start Bot Game
+`POST /api/lobby/:lobbyId/start-bot-game`
+
+Host only, and only while no other human players are seated. Fills the open seats (up to 6) with bots (`isBot: true`), deals 11 cards to every player from two decks plus four jokers, and marks the lobby as started.
+
+**Request:** `{ "userId": "<host id>" }`
+
+**Errors:** `400` missing user, `403` not the host, `404` unknown lobby, `409` already started or other players seated.
+
+#### Save Game State
+`PUT /api/lobby/:lobbyId/gamestate`
+
+Periodic save of the client's game state. Lobby members only, and only after the game has started.
+
+**Request:** `{ "userId": "<member id>", "gamestate": { ... } }`
 
 #### Delete Lobby
 `DELETE /api/lobby/:lobbyId`

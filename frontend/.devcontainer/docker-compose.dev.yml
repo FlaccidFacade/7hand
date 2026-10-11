@@ -1,6 +1,6 @@
 services:
   frontend-dev:
-    image: node:20-alpine
+    image: node:24-alpine
     working_dir: /workspace
     command: sh -c "npm ci && npm run start"
     ports:

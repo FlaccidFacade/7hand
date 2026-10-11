@@ -1,0 +1,91 @@
+.board {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+}
+
+.space {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.3);
+  color: #fff;
+}
+
+.space.mine {
+  border-color: rgba(241, 196, 15, 0.7);
+}
+
+.space-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.badge {
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(46, 204, 113, 0.85);
+  color: #0b2a17;
+  font-size: 0.7rem;
+}
+
+.melds {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.meld {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+  padding: 0.3rem;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: default;
+}
+
+.meld.targetable {
+  cursor: pointer;
+}
+
+.meld.targetable:hover,
+.meld.targetable:focus-visible {
+  border-color: #fff;
+  box-shadow: 0 0 12px 2px rgba(255, 255, 255, 0.6);
+}
+
+.meld-label {
+  font-size: 0.7rem;
+  opacity: 0.85;
+}
+
+.meld-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.mini-card {
+  display: block;
+  zoom: 0.42;
+}
+
+.empty {
+  margin: 0;
+  font-size: 0.75rem;
+  opacity: 0.7;
+}

@@ -1,5 +1,5 @@
 .lobby-container {
-    height: 100vh;
+    min-height: 100vh;
     background-image: url('/table-164143278-3889056325.jpg');
     background-size: cover;
     background-position: center;
@@ -161,6 +161,16 @@
 }
 
 .player-spot,
+.bot-badge {
+    font-size: clamp(0.6rem, 1.2vw, 0.75rem);
+    font-weight: 700;
+    color: #9be7ff;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 0.3vh 1.5%;
+    border-radius: 4px;
+    text-align: center;
+}
+
 .empty-spot {
     display: flex;
     flex-direction: column;
@@ -366,4 +376,222 @@
     justify-content: center;
 }
 
+}
+
+
+/* Cards on the table and in the player's hand */
+.table-cards {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 6vw;
+}
+
+.pile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.pile-label {
+    font-size: clamp(0.7rem, 1.2vw, 0.9rem);
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(0, 0, 0, 0.3);
+    padding: 0.15rem 0.6rem;
+    border-radius: 6px;
+}
+
+.deck-stack {
+    display: grid;
+}
+
+.deck-layer {
+    grid-area: 1 / 1;
+}
+
+.empty-pile {
+    width: 100px;
+    height: 140px;
+    border: 2px dashed rgba(255, 255, 255, 0.5);
+    border-radius: 8px;
+}
+
+.player-hand {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    padding: 1rem 1rem 0.5rem;
+    z-index: 2;
+}
+
+.hand-card {
+    display: block;
+    transition: transform 0.15s ease-out;
+}
+
+.hand-card + .hand-card {
+    margin-left: -41px;
+}
+
+.hand-card {
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.hand-card:not(.inactive):hover,
+.hand-card.selected {
+    transform: translateY(-14px);
+    z-index: 1;
+}
+
+.hand-card.dragging {
+    cursor: grabbing;
+    z-index: 10;
+    transition: none;
+    filter: drop-shadow(0 8px 10px rgba(0, 0, 0, 0.45));
+}
+
+.flip-card {
+    position: relative;
+    transform-style: preserve-3d;
+}
+
+.flip-front,
+.flip-back {
+    backface-visibility: hidden;
+}
+
+.flip-back {
+    position: absolute;
+    inset: 0;
+    transform: rotateY(180deg);
+}
+
+@media (max-width: 768px) {
+    .empty-pile {
+        width: 80px;
+        height: 112px;
+    }
+
+    .hand-card + .hand-card {
+        margin-left: -40px;
+    }
+}
+
+@media (max-width: 480px) {
+    .empty-pile {
+        width: 60px;
+        height: 84px;
+    }
+
+    .hand-card + .hand-card {
+        margin-left: -30px;
+    }
+}
+
+.turn-hint {
+    font-size: clamp(0.75rem, 1.4vw, 1rem);
+    color: rgba(255, 255, 255, 0.95);
+    text-align: center;
+}
+
+.btn-confirm-move {
+    padding: 0.5rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    background: #f1c40f;
+    color: #222;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-confirm-move:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.requirement {
+    font-size: clamp(0.7rem, 1.2vw, 0.9rem);
+    color: #f1c40f;
+    text-align: center;
+}
+
+.hand-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 1rem 0;
+    color: #fff;
+}
+
+.action-buttons,
+.staged-melds {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.btn-stage,
+.btn-lay-down {
+    padding: 0.4rem 1rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-stage {
+    background: rgba(255, 255, 255, 0.85);
+    color: #222;
+}
+
+.btn-lay-down {
+    background: #2ecc71;
+    color: #0b2a17;
+}
+
+.btn-stage:disabled,
+.btn-lay-down:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.staged-meld {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.45);
+    font-size: 0.85rem;
+}
+
+.btn-unstage {
+    border: none;
+    background: none;
+    color: inherit;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+.action-hint {
+    font-size: 0.8rem;
+    opacity: 0.85;
+}
+
+.action-error {
+    padding: 0.25rem 0.75rem;
+    border-radius: 6px;
+    background: rgba(192, 57, 43, 0.9);
+    font-size: 0.85rem;
+}
+
+.hand-card.staged {
+    opacity: 0.45;
 }
