@@ -238,6 +238,9 @@ export class Lobby implements OnInit, OnDestroy {
   get drawPileCount(): number {
     return this.gameState?.drawPile?.length ?? 0;
   }
+  get discardPileCount(): number {
+    return this.gameState?.discardPile?.length ?? 0;
+  }
 
   get topDiscard(): Card | null {
     const pile = this.gameState?.discardPile;

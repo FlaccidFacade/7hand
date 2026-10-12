@@ -61,7 +61,7 @@
               <span class="empty-pile" *ngIf="!topDiscard"></span>
             </button>
             </div>
-            <span class="pile-label">Discard</span>
+            <span class="pile-label">Discard ({{ discardPileCount }})</span>
           </div>
         </div>
         <div class="turn-hint-background selection-ring" [class.selected]="turnHint.includes('Your turn')">
