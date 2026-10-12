@@ -53,8 +53,35 @@
             <span class="pile-label">Discard</span>
           </div>
         </div>
-        <div class="turn-hint" *ngIf="turnHint">{{ turnHint }}</div>
+        <div class="turn-hint comet" *ngIf="turnHint">{{ turnHint }}</div>
         <div class="requirement" *ngIf="requirementLabel">{{ requirementLabel }}</div>
+        <section class="hand-choices" *ngIf="showTableCards" aria-label="Your qualification hands">
+          <div class="hand-choice-list">
+            <button
+              type="button"
+              class="hand-choice"
+              *ngFor="let option of handOptions"
+              [class.selected]="option.selected"
+              [disabled]="!canChooseHand || !option.available"
+              [attr.aria-pressed]="option.selected"
+              (click)="chooseQualificationHand(option.handNumber)"
+            >
+              <span>{{ option.label }}</span>
+              <strong>{{ option.status }}</strong>
+            </button>
+          </div>
+        </section>
+        <button
+          type="button"
+          class="btn-next-hand"
+          *ngIf="canDealNextHand"
+          (click)="dealNextHand()"
+        >
+          Deal hand {{ (gameState?.handNumber ?? 1) + 1 }}
+        </button>
+        <div class="requirement" *ngIf="isHandOver && gameState?.phase === 'handOver' && !canDealNextHand">
+          Waiting for the host to deal the next hand.
+        </div>
         <button
           type="button"
           class="btn-confirm-move"
@@ -115,17 +142,7 @@
           ></app-playing-card>
         </ng-template>
       </button>
-    </div>
-  </div>
-
-  <app-board
-    *ngIf="showTableCards"
-    [spaces]="boardSpaces"
-    [targetable]="canAddToMeld"
-    (meldSelected)="addSelectedTo($event)"
-  ></app-board>
-
-  <div class="hand-actions" *ngIf="showTableCards && canDiscardNow">
+      <div class="hand-actions" *ngIf="showTableCards && canDiscardNow">
     <div class="staged-melds" *ngIf="stagedMelds.length > 0">
       <span class="staged-meld" *ngFor="let group of stagedMelds; let i = index">
         <strong>{{ group.type === 'set' ? 'Set' : 'Run' }}:</strong>
@@ -143,6 +160,18 @@
     <div class="action-hint" *ngIf="canAddToMeld">Select cards, then click a set or run on the table to add them to it</div>
     <div class="action-error" *ngIf="actionError" role="alert">{{ actionError }}</div>
   </div>
+    </div>
+    
+  </div>
+
+  <app-board
+    *ngIf="showTableCards"
+    [spaces]="boardSpaces"
+    [targetable]="canAddToMeld"
+    (meldSelected)="addSelectedTo($event)"
+  ></app-board>
+
+  
 
  
 

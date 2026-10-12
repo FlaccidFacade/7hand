@@ -70,3 +70,37 @@ body {
     animation: none;
   }
 }
+.comet {
+  position: relative;
+  overflow: hidden; /* keeps the comet clipped to the div */
+}
+
+.comet::after {
+  content: "";
+  position: absolute;
+  top: -20px;
+  left: -80px;
+  width: 80px;
+  height: 4px;
+  background: linear-gradient(to left, white, rgba(255, 255, 255, 0));
+  border-radius: 50%;
+  filter: blur(1px);
+  animation: comet-fly 3s linear infinite;
+}
+
+@keyframes comet-fly {
+  0% {
+    transform: translate(-100px, 0) rotate(20deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(calc(100vw + 100px), 200px) rotate(20deg);
+    opacity: 0;
+  }
+}

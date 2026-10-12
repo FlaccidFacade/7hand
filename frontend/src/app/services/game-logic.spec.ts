@@ -1,5 +1,16 @@
 import { Card, GameState } from './lobby.service';
-import { addToMeld, canDiscard, canDraw, discardCard, drawCard, isHandOver, playBotStep, playMelds } from './game-logic';
+import {
+  addToMeld,
+  canDiscard,
+  canDraw,
+  discardCard,
+  drawCard,
+  isHandOver,
+  playBotStep,
+  playMelds,
+  selectHand,
+  startNextHand
+} from './game-logic';
 
 const card = (id: string, suit: string, rank: string): Card => ({ id, suit, rank });
 
@@ -132,7 +143,7 @@ describe('game-logic', () => {
     const sevens = [card('7h', 'hearts', '7'), card('7s', 'spades', '7'), card('7d', 'diamonds', '7')];
     const nines = [card('9h', 'hearts', '9'), card('9s', 'spades', '9'), card('9c', 'clubs', '9')];
 
-    // Hand 1 of the rules: qualify with two sets
+    // Hand 1 of the rules: qualify with two trips
     function playState(overrides: Partial<GameState> = {}): GameState {
       return makeState({
         handNumber: 1,
@@ -140,6 +151,9 @@ describe('game-logic', () => {
         hands: { me: [...sevens, ...nines, card('ks', 'spades', 'K'), card('2c', 'clubs', '2')], 'bot-1': [card('b1', 'spades', '4')] },
         board: { me: [], 'bot-1': [] },
         qualified: { me: false, 'bot-1': false },
+        selectedHands: { me: 1, 'bot-1': null },
+        completedHands: { me: [], 'bot-1': [] },
+        removedHands: { me: [], 'bot-1': [] },
         ...overrides
       });
     }
@@ -150,28 +164,51 @@ describe('game-logic', () => {
     ];
 
     describe('playMelds', () => {
+      it('should require the player to select an available hand before laying down', () => {
+        const state = playState({ selectedHands: { me: null, 'bot-1': null } });
+        expect(() => playMelds(state, 'me', twoSets)).toThrowError(/Choose an available hand/);
+      });
+
+      it('should let a player choose any hand that is still available', () => {
+        const state = selectHand(playState(), 'me', 7);
+        expect(state.selectedHands!['me']).toBe(7);
+        expect(() => selectHand(state, 'me', 1)).not.toThrow();
+      });
+
       it('should lay sets on the player\'s space of the table and qualify them', () => {
         const next = playMelds(playState(), 'me', twoSets);
 
         expect(next.board!['me'].map(m => m.type)).toEqual(['set', 'set']);
         expect(next.board!['bot-1']).toEqual([]);
         expect(next.qualified!['me']).toBe(true);
+        expect(next.completedHands!['me']).toEqual([1]);
         expect(next.hands!['me'].map(c => c.id)).toEqual(['ks', '2c']);
         expect(next.turnPhase).toBe('discard');
         expect(next.currentTurn).toBe('me');
       });
 
       it('should reject a first play that does not meet the hand requirement', () => {
-        expect(() => playMelds(playState(), 'me', [twoSets[0]])).toThrowError(/Hand 1 needs two sets to qualify/);
+        expect(() => playMelds(playState(), 'me', [twoSets[0]])).toThrowError(/Hand 1 needs exactly two trips to qualify/);
+      });
+
+      it('should reject laying down more meld groups than the selected hand requires', () => {
+        const fives = [card('5h', 'hearts', '5'), card('5s', 'spades', '5'), card('5c', 'clubs', '5')];
+        const state = playState({ hands: { me: [...sevens, ...nines, ...fives], 'bot-1': [] } });
+        expect(() => playMelds(state, 'me', [...twoSets, { type: 'set' as const, cardIds: fives.map(c => c.id) }]))
+          .toThrowError(/exactly two trips/);
       });
 
       it('should expect a set and a run on hand two', () => {
         const run = { type: 'run' as const, cardIds: ['4h', '5h', '6h', '7h'] };
         const hand = [card('4h', 'hearts', '4'), card('5h', 'hearts', '5'), card('6h', 'hearts', '6'), ...sevens, ...nines];
-        const state = playState({ handNumber: 2, hands: { me: hand, 'bot-1': [] } });
+        const state = playState({
+          handNumber: 2,
+          selectedHands: { me: 2, 'bot-1': null },
+          hands: { me: hand, 'bot-1': [] }
+        });
 
         expect(() => playMelds(state, 'me', [twoSets[1], { type: 'set', cardIds: ['7s', '7d', '7h'] }])).toThrowError(
-          /one set and one run/
+          /one trip and one set/
         );
         const next = playMelds(state, 'me', [twoSets[1], run]);
         expect(next.board!['me'].map(m => m.type)).toEqual(['set', 'run']);
@@ -323,6 +360,35 @@ describe('game-logic', () => {
         expect(next.winnerId).toBe('me');
         expect(next.currentTurn).toBe('me');
         expect(next.discardPile!.map(c => c.id)).toContain('ks');
+      });
+    });
+
+    describe('round progression', () => {
+      it('should remove the easiest remaining hand when players are still unqualified at the end', () => {
+        const state = playState({
+          turnPhase: 'discard',
+          hands: { me: [card('last', 'spades', 'K')], 'bot-1': [card('b', 'clubs', '4')] }
+        });
+        const ended = discardCard(state, 'me', 'last');
+        expect(ended.removedHands).toEqual({ me: [1], 'bot-1': [1] });
+      });
+
+      it('should deal the next round while preserving completed and removed hands', () => {
+        const state = playState({
+          turnPhase: 'discard',
+          hands: { me: [card('last', 'spades', 'K')], 'bot-1': [card('b', 'clubs', '4')] }
+        });
+        const next = startNextHand(discardCard(state, 'me', 'last'));
+
+        expect(next.handNumber).toBe(2);
+        expect(next.phase).toBe('playing');
+        expect(next.currentTurn).toBe('bot-1');
+        expect(next.turnPhase).toBe('draw');
+        expect(next.hands!['me']).toHaveSize(11);
+        expect(next.hands!['bot-1']).toHaveSize(11);
+        expect(next.qualified).toEqual({ me: false, 'bot-1': false });
+        expect(next.selectedHands).toEqual({ me: null, 'bot-1': null });
+        expect(next.removedHands).toEqual({ me: [1], 'bot-1': [1] });
       });
     });
 

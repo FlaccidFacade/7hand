@@ -9,6 +9,8 @@ export interface BoardSpace {
   isMe: boolean;
   isBot: boolean;
   qualified: boolean;
+  handLabel?: string;
+  availableHandLabels?: Record<string, boolean>;
   melds: Meld[];
 }
 
@@ -43,6 +45,7 @@ export class BoardComponent {
     if (meld.type === 'set') {
       return `Set of ${meld.rank}s`;
     }
+
     const low = meld.low ?? 1;
     const high = low + meld.cards.length - 1;
     return `Run ${SUIT_SYMBOLS[meld.suit ?? ''] ?? ''} ${rankName(low)}-${rankName(high)}`;

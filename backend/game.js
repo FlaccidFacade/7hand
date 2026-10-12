@@ -63,6 +63,9 @@ function dealGame(players) {
     // One table per lobby with a space for every player's sets and runs
     board: Object.fromEntries(players.map(p => [p.id, []])),
     qualified: Object.fromEntries(players.map(p => [p.id, false])),
+    selectedHands: Object.fromEntries(players.map(p => [p.id, null])),
+    completedHands: Object.fromEntries(players.map(p => [p.id, []])),
+    removedHands: Object.fromEntries(players.map(p => [p.id, []])),
     startedAt: new Date().toISOString()
   };
 }

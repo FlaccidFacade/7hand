@@ -542,6 +542,9 @@ describe('Lobby', () => {
         discardPile: [card('older', 'hearts', '3')],
         board: { host: [], 'bot-1': [botSet] },
         qualified: { host: false, 'bot-1': true },
+        selectedHands: { host: 1, 'bot-1': 1 },
+        completedHands: { host: [], 'bot-1': [1] },
+        removedHands: { host: [], 'bot-1': [] },
         ...overrides
       });
 
@@ -571,10 +574,21 @@ describe('Lobby', () => {
         expect(el().querySelectorAll('app-board .space').length).toBe(2);
         expect(meldsOf('bot-1').length).toBe(1);
         expect(meldsOf('host').length).toBe(0);
+        expect(el().querySelector('.space[data-player-id="host"] .available-hands')?.textContent).toContain('Hand 1: two trips');
+        expect(el().querySelector('.space[data-player-id="host"] .available-hands')?.textContent).toContain('Hand 7: three sets');
       });
 
       it('should say what the player must lay down to qualify', () => {
-        expect(el().querySelector('.requirement')?.textContent).toContain('Hand 1: lay down two sets to qualify');
+        expect(el().querySelector('.requirement')?.textContent).toContain('Hand 1: lay down exactly two trips to qualify');
+        expect(el().querySelectorAll('.hand-choice').length).toBe(7);
+        expect(el().querySelector('.hand-choice.selected')?.textContent).toContain('two trips');
+      });
+
+      it('should let the player choose a different available hand for this round', () => {
+        component.chooseQualificationHand(7);
+
+        expect(component.gameState?.selectedHands?.['host']).toBe(7);
+        expect(el().querySelector('.hand-choice.selected')?.textContent).toContain('three sets');
       });
 
       it('should only offer to stage a set or a run once enough cards are selected', () => {
@@ -619,7 +633,7 @@ describe('Lobby', () => {
         stage('set');
         press(el().querySelector('.btn-lay-down'));
 
-        expect(el().querySelector('.action-error')?.textContent).toContain('Hand 1 needs two sets to qualify');
+        expect(el().querySelector('.action-error')?.textContent).toContain('Hand 1 needs exactly two trips to qualify');
         expect(meldsOf('host').length).toBe(0);
       });
 

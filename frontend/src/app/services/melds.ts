@@ -9,22 +9,24 @@ const ACE_HIGH = 14;
 export type MeldResult = { meld: Meld } | { error: string };
 
 export interface HandRequirement {
+  trips: number;
   sets: number;
-  runs: number;
 }
 
-// What a player must lay down to qualify on the board, by hand number (1-7)
+// A trip is three of a kind; a set is a run of at least four cards.
 const REQUIREMENTS: HandRequirement[] = [
-  { sets: 2, runs: 0 },
-  { sets: 1, runs: 1 },
-  { sets: 0, runs: 2 },
-  { sets: 3, runs: 0 },
-  { sets: 2, runs: 1 },
-  { sets: 1, runs: 2 },
-  { sets: 0, runs: 3 }
+  { trips: 2, sets: 0 },
+  { trips: 1, sets: 1 },
+  { trips: 0, sets: 2 },
+  { trips: 3, sets: 0 },
+  { trips: 2, sets: 1 },
+  { trips: 1, sets: 2 },
+  { trips: 0, sets: 3 }
 ];
 
 const NUMBER_WORDS = ['no', 'one', 'two', 'three'];
+
+export const HAND_NUMBERS = REQUIREMENTS.map((_, index) => index + 1);
 
 export function isJoker(card: Card): boolean {
   return card.rank === 'JOKER';
@@ -47,13 +49,18 @@ export function requirementFor(handNumber: number): HandRequirement {
 
 export function describeRequirement(req: HandRequirement): string {
   const parts: string[] = [];
+  if (req.trips > 0) {
+    parts.push(`${NUMBER_WORDS[req.trips]} ${req.trips === 1 ? 'trip' : 'trips'}`);
+  }
   if (req.sets > 0) {
     parts.push(`${NUMBER_WORDS[req.sets]} ${req.sets === 1 ? 'set' : 'sets'}`);
   }
-  if (req.runs > 0) {
-    parts.push(`${NUMBER_WORDS[req.runs]} ${req.runs === 1 ? 'run' : 'runs'}`);
-  }
   return parts.join(' and ');
+}
+
+export function handDifficulty(handNumber: number): number {
+  const requirement = requirementFor(handNumber);
+  return requirement.trips * MIN_SET_SIZE + requirement.sets * MIN_RUN_SIZE;
 }
 
 function splitJokers(cards: Card[]): { naturals: Card[]; jokers: Card[] } {

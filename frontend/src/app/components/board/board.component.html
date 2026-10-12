@@ -8,8 +8,16 @@
     <header class="space-header">
       <span class="space-name">{{ space.name }}</span>
       <span class="badge" *ngIf="space.qualified">Qualified</span>
+      <span class="qualification-label">{{ space.handLabel || 'Choosing a hand' }}</span>
     </header>
-
+    
+    
+      <div class="circles"  class="available-hands">
+  @for (entry of space.availableHandLabels! | keyvalue; track entry.key) {
+    <span class="circle" [class.filled]="entry.value">{{ entry.key }}</span>
+  }
+</div>
+ 
     <div class="melds">
       <button
         type="button"

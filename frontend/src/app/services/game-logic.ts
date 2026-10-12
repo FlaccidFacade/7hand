@@ -1,10 +1,12 @@
 import { Card, GameState, Meld } from './lobby.service';
 import {
   HandRequirement,
+  HAND_NUMBERS,
   addCardsToMeld,
   buildRun,
   buildSet,
   describeRequirement,
+  handDifficulty,
   isJoker,
   rankValue,
   requirementFor
@@ -48,12 +50,95 @@ export function canDiscard(state: GameState | null, playerId: string | null): bo
 }
 
 export function isHandOver(state: GameState | null): boolean {
-  return state?.phase === 'handOver';
+  return state?.phase === 'handOver' || state?.phase === 'gameOver';
 }
 
-// A player with no cards left ends the hand
+function availableHands(state: GameState, playerId: string): number[] {
+  const completed = state.completedHands?.[playerId] ?? [];
+  const removed = state.removedHands?.[playerId] ?? [];
+  return HAND_NUMBERS.filter(hand => !completed.includes(hand) && !removed.includes(hand));
+}
+
+// An early finish removes the easiest remaining hand from each player who did not qualify.
 function finishHand(state: GameState, winnerId: string): GameState {
-  return { ...state, phase: 'handOver', winnerId, turnPhase: 'over' };
+  const removedHands = { ...state.removedHands };
+  for (const playerId of state.turnOrder ?? []) {
+    if (state.qualified?.[playerId]) {
+      continue;
+    }
+    const easiest = availableHands(state, playerId).sort((a, b) => handDifficulty(a) - handDifficulty(b))[0];
+    if (easiest !== undefined) {
+      removedHands[playerId] = [...(removedHands[playerId] ?? []), easiest];
+    }
+  }
+  const phase = (state.handNumber ?? 1) >= (state.totalHands ?? 7) ? 'gameOver' : 'handOver';
+  return { ...state, phase, winnerId, removedHands, turnPhase: 'over' };
+}
+
+/** Selects the one hand a player will qualify with this round. */
+export function selectHand(state: GameState, playerId: string, handNumber: number): GameState {
+  if (state.phase !== 'playing' || state.qualified?.[playerId]) {
+    throw new Error('You cannot change your hand choice now');
+  }
+  if (!availableHands(state, playerId).includes(handNumber)) {
+    throw new Error('That hand is no longer available');
+  }
+  return { ...state, selectedHands: { ...state.selectedHands, [playerId]: handNumber } };
+}
+
+/** Deals the next round while preserving each player's completed and removed hands. */
+export function startNextHand(state: GameState): GameState {
+  if (state.phase !== 'handOver') {
+    throw new Error('The current hand is not over');
+  }
+  const handNumber = (state.handNumber ?? 1) + 1;
+  if (handNumber > (state.totalHands ?? 7)) {
+    return { ...state, phase: 'gameOver', turnPhase: 'over' };
+  }
+
+  const turnOrder = state.turnOrder ?? [];
+  if (turnOrder.length === 0) {
+    throw new Error('At least one player is required');
+  }
+  const deck = shuffle(createGameDeck(handNumber));
+  const hands: Record<string, Card[]> = {};
+  turnOrder.forEach(playerId => {
+    hands[playerId] = deck.splice(0, 11);
+  });
+  const discardPile = deck.splice(0, 1);
+  const firstPlayer = turnOrder[(handNumber - 1) % turnOrder.length];
+
+  return {
+    ...state,
+    phase: 'playing',
+    handNumber,
+    currentTurn: firstPlayer,
+    turnPhase: 'draw',
+    hands,
+    drawPile: deck,
+    discardPile,
+    board: Object.fromEntries(turnOrder.map(playerId => [playerId, []])),
+    qualified: Object.fromEntries(turnOrder.map(playerId => [playerId, false])),
+    selectedHands: Object.fromEntries(turnOrder.map(playerId => [playerId, null])),
+    winnerId: undefined
+  };
+}
+
+function createGameDeck(handNumber: number): Card[] {
+  const suits = ['hearts', 'diamonds', 'clubs', 'spades'];
+  const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+  const deck: Card[] = [];
+  for (let copy = 0; copy < 2; copy++) {
+    for (const suit of suits) {
+      for (const rank of ranks) {
+        deck.push({ id: `hand-${handNumber}-${copy}-${suit}-${rank}`, suit, rank });
+      }
+    }
+  }
+  for (let joker = 0; joker < 4; joker++) {
+    deck.push({ id: `hand-${handNumber}-joker-${joker}`, suit: 'joker', rank: 'JOKER' });
+  }
+  return deck;
 }
 
 /**
@@ -158,21 +243,34 @@ export function playMelds(state: GameState, playerId: string, groups: MeldGroup[
   });
 
   if (!state.qualified?.[playerId]) {
-    const handNumber = state.handNumber ?? 1;
+    const handNumber = state.selectedHands
+      ? state.selectedHands[playerId]
+      : state.handNumber ?? 1;
+    if (handNumber === null || handNumber === undefined) {
+      throw new Error('Choose an available hand before laying down');
+    }
+    if (!availableHands(state, playerId).includes(handNumber)) {
+      throw new Error('That hand is no longer available');
+    }
     const req = requirementFor(handNumber);
-    const sets = melds.filter(m => m.type === 'set').length;
-    const runs = melds.filter(m => m.type === 'run').length;
-    if (sets < req.sets || runs < req.runs) {
-      throw new Error(`Hand ${handNumber} needs ${describeRequirement(req)} to qualify`);
+    const trips = melds.filter(m => m.type === 'set').length;
+    const sets = melds.filter(m => m.type === 'run').length;
+    if (trips !== req.trips || sets !== req.sets) {
+      throw new Error(`Hand ${handNumber} needs exactly ${describeRequirement(req)} to qualify`);
     }
   }
 
   const remaining = hand.filter(c => !taken.has(c.id));
+  const selectedHand = state.selectedHands?.[playerId] ?? state.handNumber ?? 1;
+  const completedHands = !state.qualified?.[playerId] && state.completedHands
+    ? { ...state.completedHands, [playerId]: [...(state.completedHands[playerId] ?? []), selectedHand] }
+    : state.completedHands;
   const next: GameState = {
     ...state,
     hands: { ...state.hands, [playerId]: remaining },
     board: { ...state.board, [playerId]: [...(state.board?.[playerId] ?? []), ...melds] },
-    qualified: { ...state.qualified, [playerId]: true }
+    qualified: { ...state.qualified, [playerId]: true },
+    completedHands
   };
   return remaining.length === 0 ? finishHand(next, playerId) : next;
 }
@@ -291,8 +389,8 @@ function findQualifyingGroups(hand: Card[], req: HandRequirement): MeldGroup[] |
   const sets = setCandidates(naturals, jokers.length);
   const runs = runCandidates(naturals, jokers.length);
   const wanted: Array<'set' | 'run'> = [
-    ...Array<'run'>(req.runs).fill('run'),
-    ...Array<'set'>(req.sets).fill('set')
+    ...Array<'run'>(req.sets).fill('run'),
+    ...Array<'set'>(req.trips).fill('set')
   ];
 
   const search = (i: number, used: Set<string>, chosen: MeldGroup[]): MeldGroup[] | null => {
@@ -325,7 +423,18 @@ function botPlayCards(state: GameState, botId: string): GameState | null {
   const hand = state.hands?.[botId] ?? [];
 
   if (!state.qualified?.[botId]) {
-    const groups = findQualifyingGroups(hand, requirementFor(state.handNumber ?? 1));
+    let choice = state.selectedHands?.[botId] ?? null;
+    if (!choice) {
+      const options = availableHands(state, botId);
+      choice = options.find(option => findQualifyingGroups(hand, requirementFor(option))) ?? options[0] ?? null;
+      if (choice !== null) {
+        state = selectHand(state, botId, choice);
+      }
+    }
+    if (choice === null) {
+      return null;
+    }
+    const groups = findQualifyingGroups(hand, requirementFor(choice));
     if (!groups) {
       return null;
     }
