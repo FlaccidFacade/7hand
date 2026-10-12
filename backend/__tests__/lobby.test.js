@@ -106,3 +106,19 @@ describe('loadLobbyFromDb', () => {
     await expect(loadLobbyFromDb('ABC10O')).resolves.toBeNull();
   });
 });
+
+describe('Lobby scores', () => {
+  it('should mirror game scores onto player objects and ignore invalid values', () => {
+    const lobby = new Lobby({ id: 'host' });
+    lobby.addUser({ id: 'p2' });
+    lobby.syncScores({ scores: { host: 12, p2: -3 } });
+    expect(lobby.users[0].gameScore).toBe(12);
+    expect(lobby.users[1].gameScore).toBeUndefined();
+  });
+
+  it('should start bot games with a zero score per player', () => {
+    const lobby = new Lobby({ id: 'host' });
+    lobby.startBotGame();
+    expect(lobby.users.every(u => u.gameScore === 0)).toBe(true);
+  });
+});

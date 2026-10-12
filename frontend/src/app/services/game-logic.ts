@@ -24,6 +24,35 @@ const RANK_VALUE: Record<string, number> = {
   '8': 8, '9': 9, '10': 10, J: 11, Q: 12, K: 13
 };
 
+export const BIDS_PER_HAND = 3;
+
+/** Spends one of the player's bids for the current hand. */
+export function useBid(state: GameState, playerId: string): GameState {
+  const used = state.bidsUsed?.[playerId] ?? 0;
+  if (state.phase !== 'playing' || used >= BIDS_PER_HAND) {
+    throw new Error('No bids available');
+  }
+  return { ...state, bidsUsed: { ...state.bidsUsed, [playerId]: used + 1 } };
+}
+
+/** Penalty points a card costs when left in hand: Joker 15, Ace 11, J-K 10, others face value. */
+export function cardPoints(card: Card): number {
+  if (isJoker(card)) {
+    return 15;
+  }
+  if (card.rank === 'A') {
+    return 11;
+  }
+  if (['J', 'Q', 'K'].includes(card.rank)) {
+    return 10;
+  }
+  return Number(card.rank) || 0;
+}
+
+export function handPoints(cards: Card[] | undefined): number {
+  return (cards ?? []).reduce((sum, card) => sum + cardPoints(card), 0);
+}
+
 function randomIndex(maxExclusive: number): number {
   return crypto.getRandomValues(new Uint32Array(1))[0] % maxExclusive;
 }
@@ -72,7 +101,12 @@ function finishHand(state: GameState, winnerId: string): GameState {
     }
   }
   const phase = (state.handNumber ?? 1) >= (state.totalHands ?? 7) ? 'gameOver' : 'handOver';
-  return { ...state, phase, winnerId, removedHands, turnPhase: 'over' };
+  // Lowest total wins: the winner adds nothing, everyone else adds the cards still in hand
+  const scores = { ...state.scores };
+  for (const playerId of state.turnOrder ?? []) {
+    scores[playerId] = (scores[playerId] ?? 0) + (playerId === winnerId ? 0 : handPoints(state.hands?.[playerId]));
+  }
+  return { ...state, phase, winnerId, removedHands, scores, turnPhase: 'over' };
 }
 
 /** Selects the one hand a player will qualify with this round. */
@@ -120,6 +154,7 @@ export function startNextHand(state: GameState): GameState {
     board: Object.fromEntries(turnOrder.map(playerId => [playerId, []])),
     qualified: Object.fromEntries(turnOrder.map(playerId => [playerId, false])),
     selectedHands: Object.fromEntries(turnOrder.map(playerId => [playerId, null])),
+    bidsUsed: Object.fromEntries(turnOrder.map(playerId => [playerId, 0])),
     winnerId: undefined
   };
 }

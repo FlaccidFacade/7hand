@@ -3,11 +3,14 @@ import {
   addToMeld,
   canDiscard,
   canDraw,
+  cardPoints,
+  handPoints,
   discardCard,
   drawCard,
   isHandOver,
   playBotStep,
   playMelds,
+  useBid,
   selectHand,
   startNextHand
 } from './game-logic';
@@ -463,5 +466,36 @@ describe('game-logic', () => {
         expect(next.winnerId).toBe('bot-1');
       });
     });
+  });
+});
+
+describe('scoring', () => {
+  it('should value cards by face, J-K 10, Ace 11, Joker 15', () => {
+    expect(cardPoints(card('a', 'hearts', '7'))).toBe(7);
+    expect(cardPoints(card('b', 'hearts', 'Q'))).toBe(10);
+    expect(cardPoints(card('c', 'hearts', 'A'))).toBe(11);
+    expect(cardPoints(card('d', 'joker', 'JOKER'))).toBe(15);
+    expect(handPoints([card('a', 'hearts', '7'), card('c', 'hearts', 'A')])).toBe(18);
+  });
+
+  it('should give the winner 0 and add remaining hand points to others', () => {
+    const state = makeState({
+      hands: { me: [card('m1', 'hearts', '4')], 'bot-1': [card('b1', 'spades', 'K'), card('b2', 'spades', '3')] },
+      turnPhase: 'discard',
+      scores: { me: 5, 'bot-1': 20 }
+    });
+    const next = discardCard(state, 'me', 'm1');
+    expect(next.scores).toEqual({ me: 5, 'bot-1': 33 });
+  });
+});
+
+describe('bids', () => {
+  it('should spend up to three bids per hand and then reject', () => {
+    let state = makeState();
+    for (let i = 0; i < 3; i++) {
+      state = useBid(state, 'me');
+    }
+    expect(state.bidsUsed?.['me']).toBe(3);
+    expect(() => useBid(state, 'me')).toThrow();
   });
 });

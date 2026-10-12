@@ -53,6 +53,8 @@ export interface GameState {
   selectedHands?: Record<string, number | null>;
   completedHands?: Record<string, number[]>;
   removedHands?: Record<string, number[]>;
+  // Bids spent by each player this hand; replenished on every deal
+  bidsUsed?: Record<string, number>;
   winnerId?: string;
   startedAt?: string;
 }

@@ -31,6 +31,16 @@
             <span class="pile-label">Deck ({{ drawPileCount }})</span>
           </div>
           <div class="pile discard-pile" aria-label="Top card of the discard pile">
+            <div class="discard-stack">
+            <div class="previous-discard" aria-hidden="false" *ngFor="let prev of previousDiscards; let i = index"
+              [style.--offset]="previousDiscards.length - i">
+              <app-playing-card
+                [suit]="suitOf(prev)"
+                [rank]="rankOf(prev)"
+                [draggable]="false"
+                [flippable]="false"
+              ></app-playing-card>
+            </div>
             <button
               type="button"
               class="card-slot selection-ring"
@@ -50,10 +60,14 @@
               ></app-playing-card>
               <span class="empty-pile" *ngIf="!topDiscard"></span>
             </button>
+            </div>
             <span class="pile-label">Discard</span>
           </div>
         </div>
-        <div class="turn-hint comet" *ngIf="turnHint">{{ turnHint }}</div>
+        <div class="turn-hint-background selection-ring" [class.selected]="turnHint.includes('Your turn')">
+        
+        <div class="turn-hint comet "
+         *ngIf="turnHint">{{ turnHint }}</div></div>
         <div class="requirement" *ngIf="requirementLabel">{{ requirementLabel }}</div>
         <section class="hand-choices" *ngIf="showTableCards" aria-label="Your qualification hands">
           <div class="hand-choice-list">

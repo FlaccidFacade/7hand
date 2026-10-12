@@ -353,6 +353,19 @@
     gap: 0.5rem;
 }
 
+.discard-stack {
+    position: relative;
+    margin-left: 36px;
+}
+
+.previous-discard {
+    position: absolute;
+    top: 4px;
+    left: calc(var(--offset) * -18px);
+    pointer-events: none;
+    opacity: 0.85;
+}
+
 .pile-label {
     font-size: clamp(0.7rem, 1.2vw, 0.9rem);
     color: rgba(255, 255, 255, 0.9);
@@ -450,6 +463,15 @@
     .hand-card + .hand-card {
         margin-left: -30px;
     }
+}
+
+.turn-hint-background {
+    font-size: clamp(0.75rem, 1.4vw, 1rem);
+    color: rgba(255, 255, 255, 0.95);
+    text-align: center;
+    
+    background: #5f5f5d;
+    border-radius: 6px;
 }
 
 .turn-hint {

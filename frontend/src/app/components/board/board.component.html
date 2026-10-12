@@ -1,22 +1,33 @@
 <section class="board" aria-label="The table">
   <div
-    class="space"
+    class="space selection-ring"
+    [class.selected]="!!space.wonHand"
     *ngFor="let space of spaces; trackBy: trackSpace"
     [class.mine]="space.isMe"
     [attr.data-player-id]="space.playerId"
   >
     <header class="space-header">
-      <span class="space-name">{{ space.name }}</span>
+      <span class="space-title">
+        <span class="space-score" title="Total points this game" aria-label="Total points">{{ space.score ?? 0 }}</span>
+        <span class="space-name">{{ space.name }}</span>
+      </span>
       <span class="badge" *ngIf="space.qualified">Qualified</span>
       <span class="qualification-label">{{ space.handLabel || 'Choosing a hand' }}</span>
     </header>
     
     
-      <div class="circles"  class="available-hands">
-  @for (entry of space.availableHandLabels! | keyvalue; track entry.key) {
-    <span class="circle" [class.filled]="entry.value">{{ entry.key }}</span>
-  }
-</div>
+      <div class="hands-row">
+        <div class="circles available-bids" aria-label="Available bids">
+          @for (bid of bidSlots; track bid) {
+            <span class="circle bid" [class.used]="bid < (space.bidsUsed ?? 0)"></span>
+          }
+        </div>
+        <div class="circles available-hands">
+          @for (entry of space.availableHandLabels! | keyvalue; track entry.key) {
+            <span class="circle" [class.filled]="entry.value">{{ entry.key }}</span>
+          }
+        </div>
+      </div>
  
     <div class="melds">
       <button
@@ -33,6 +44,7 @@
         <span class="meld-cards">
           <span
             class="meld-card"
+            
             *ngFor="let card of meld.cards; let i = index"
             [class.red]="isRed(card)"
             [class.joker]="isJoker(card)"

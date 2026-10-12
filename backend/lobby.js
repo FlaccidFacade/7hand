@@ -71,8 +71,21 @@ class Lobby {
       user.position = index;
     });
     this.gamestate = { ...dealGame(this.users), botGame: true };
+    this.syncScores();
     this.started = true;
     this.touch();
+  }
+
+  // Mirrors the per-player game scores from the game state onto each player object
+  syncScores(gamestate = this.gamestate) {
+    const scores = gamestate?.scores;
+    if (!scores || typeof scores !== 'object') return;
+    this.users.forEach(user => {
+      const score = scores[user.id];
+      if (Number.isFinite(score) && score >= 0) {
+        user.gameScore = score;
+      }
+    });
   }
 
   addUser(user) {

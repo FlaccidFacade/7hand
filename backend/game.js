@@ -65,6 +65,7 @@ function dealGame(players) {
     qualified: Object.fromEntries(players.map(p => [p.id, false])),
     selectedHands: Object.fromEntries(players.map(p => [p.id, null])),
     completedHands: Object.fromEntries(players.map(p => [p.id, []])),
+    bidsUsed: Object.fromEntries(players.map(p => [p.id, 0])),
     removedHands: Object.fromEntries(players.map(p => [p.id, []])),
     startedAt: new Date().toISOString()
   };

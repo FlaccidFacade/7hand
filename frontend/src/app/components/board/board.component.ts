@@ -9,6 +9,9 @@ export interface BoardSpace {
   isMe: boolean;
   isBot: boolean;
   qualified: boolean;
+  wonHand?: boolean;
+  score?: number;
+  bidsUsed?: number;
   handLabel?: string;
   availableHandLabels?: Record<string, boolean>;
   melds: Meld[];
@@ -31,6 +34,7 @@ const SUIT_SYMBOLS: Record<string, string> = { hearts: '♥', diamonds: '♦', c
 })
 export class BoardComponent {
   @Input() spaces: BoardSpace[] = [];
+  readonly bidSlots = [0, 1, 2];
   // When true the melds can be clicked to add the selected cards to them
   @Input() targetable = false;
   @Output() meldSelected = new EventEmitter<MeldTarget>();

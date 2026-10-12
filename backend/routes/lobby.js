@@ -166,6 +166,7 @@ router.put('/:lobbyId/gamestate', async (req, res) => {
   if (!lobby.started) return res.status(409).json({ error: 'Game not started' });
 
   lobby.gamestate = gamestate;
+  lobby.syncScores();
   lobby.lastActivity = new Date();
   await saveLobbyToDb(lobby);
   res.json({ success: true });

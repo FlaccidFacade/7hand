@@ -242,6 +242,11 @@ export class Lobby implements OnInit, OnDestroy {
     return pile && pile.length > 0 ? pile[pile.length - 1] : null;
   }
 
+  // The two discards beneath the top card, oldest first; view-only
+  get previousDiscards(): Card[] {
+    return this.gameState?.discardPile?.slice(-3, -1) ?? [];
+  }
+
   get showTableCards(): boolean {
     return this.isStarted && !!this.gameState;
   }
@@ -618,6 +623,9 @@ export class Lobby implements OnInit, OnDestroy {
             isMe: id === this.currentUserId,
             isBot: !!player?.isBot,
             qualified: !!state.qualified?.[id],
+            bidsUsed: state.bidsUsed?.[id] ?? 0,
+            score: state.scores?.[id] ?? 0,
+            wonHand: !!state.winnerId && state.winnerId === id,
             handLabel: state.selectedHands?.[id]
               ? describeRequirement(requirementFor(state.selectedHands[id]!))
               : undefined,
