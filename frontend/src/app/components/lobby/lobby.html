@@ -2,13 +2,10 @@
   
     <app-header></app-header>
 
-  <div class="card-table">
+  <div class="cards row">
     <div class="table-surface">
       <!-- Center area with game info -->
       <div class="table-center">
-        <div class="game-status" *ngIf="statusLabel">
-          {{ statusLabel }}
-        </div>
         <div class="table-cards" *ngIf="showTableCards">
           <div class="pile draw-pile" [attr.aria-label]="'Draw pile, ' + drawPileCount + ' cards'">
             <button
@@ -76,82 +73,49 @@
         </button>
       </div>
 
-      <!-- Player seats around the table -->
-      <div class="seat seat-top-left" [class.occupied]="isPositionOccupied(0)">
-        <div class="player-spot" *ngIf="getPlayerAtPosition(0); let player">
-          <div class="player-avatar">{{ player.displayName.charAt(0).toUpperCase() }}</div>
-          <div class="player-name">{{ player.displayName }}</div>
-          <div class="host-badge" *ngIf="player.id === players[0]?.id">HOST</div>
-          <div class="bot-badge" *ngIf="player.isBot">BOT</div>
-        </div>
-        <div class="empty-spot" *ngIf="!getPlayerAtPosition(0)">
-          <div class="empty-icon">+</div>
-        </div>
-      </div>
-
-      <div class="seat seat-top-center" [class.occupied]="isPositionOccupied(1)">
-        <div class="player-spot" *ngIf="getPlayerAtPosition(1); let player">
-          <div class="player-avatar">{{ player.displayName.charAt(0).toUpperCase() }}</div>
-          <div class="player-name">{{ player.displayName }}</div>
-          <div class="host-badge" *ngIf="player.id === players[0]?.id">HOST</div>
-          <div class="bot-badge" *ngIf="player.isBot">BOT</div>
-        </div>
-        <div class="empty-spot" *ngIf="!getPlayerAtPosition(1)">
-          <div class="empty-icon">+</div>
-        </div>
-      </div>
-
-      <div class="seat seat-top-right" [class.occupied]="isPositionOccupied(2)">
-        <div class="player-spot" *ngIf="getPlayerAtPosition(2); let player">
-          <div class="player-avatar">{{ player.displayName.charAt(0).toUpperCase() }}</div>
-          <div class="player-name">{{ player.displayName }}</div>
-          <div class="host-badge" *ngIf="player.id === players[0]?.id">HOST</div>
-          <div class="bot-badge" *ngIf="player.isBot">BOT</div>
-        </div>
-        <div class="empty-spot" *ngIf="!getPlayerAtPosition(2)">
-          <div class="empty-icon">+</div>
-        </div>
-      </div>
-
-      <div class="seat seat-bottom-left" [class.occupied]="isPositionOccupied(3)">
-        <div class="player-spot" *ngIf="getPlayerAtPosition(3); let player">
-          <div class="player-avatar">{{ player.displayName.charAt(0).toUpperCase() }}</div>
-          <div class="player-name">{{ player.displayName }}</div>
-          <div class="host-badge" *ngIf="player.id === players[0]?.id">HOST</div>
-          <div class="bot-badge" *ngIf="player.isBot">BOT</div>
-        </div>
-        <div class="empty-spot" *ngIf="!getPlayerAtPosition(3)">
-          <div class="empty-icon">+</div>
-        </div>
-      </div>
-
-      <div class="seat seat-bottom-center" [class.occupied]="isPositionOccupied(4)">
-        <div class="player-spot" *ngIf="getPlayerAtPosition(4); let player">
-          <div class="player-avatar">{{ player.displayName.charAt(0).toUpperCase() }}</div>
-          <div class="player-name">{{ player.displayName }}</div>
-          <div class="host-badge" *ngIf="player.id === players[0]?.id">HOST</div>
-          <div class="bot-badge" *ngIf="player.isBot">BOT</div>
-        </div>
-        <div class="empty-spot" *ngIf="!getPlayerAtPosition(4)">
-          <div class="empty-icon">+</div>
-        </div>
-      </div>
-
-      <div class="seat seat-bottom-right" [class.occupied]="isPositionOccupied(5)">
-        <div class="player-spot" *ngIf="getPlayerAtPosition(5); let player">
-          <div class="player-avatar">{{ player.displayName.charAt(0).toUpperCase() }}</div>
-          <div class="player-name">{{ player.displayName }}</div>
-          <div class="host-badge" *ngIf="player.id === players[0]?.id">HOST</div>
-          <div class="bot-badge" *ngIf="player.isBot">BOT</div>
-        </div>
-        <div class="empty-spot" *ngIf="!getPlayerAtPosition(5)">
-          <div class="empty-icon">+</div>
-        </div>
-      </div>
     </div>
-
-    <!-- Table edge/rim -->
-    <div class="table-edge"></div>
+    <div class="player-hand" *ngIf="showTableCards && myHand.length > 0" aria-label="Your hand">
+      <button
+        type="button"
+        *ngFor="let card of myHand; trackBy: trackCard"
+        class="hand-card card-slot selection-ring"
+        [class.selected]="isSelected(card)"
+        [class.staged]="isStaged(card)"
+        [class.dragging]="card.id === dragCardId"
+        [class.inactive]="!canDiscardNow"
+        [style.transform]="card.id === dragCardId ? 'translate(' + dragDx + 'px, -14px) scale(1.06)' : null"
+        [attr.data-card-id]="card.id"
+        [attr.aria-pressed]="isSelected(card)"
+        [attr.aria-disabled]="!canDiscardNow || isStaged(card)"
+        [attr.aria-label]="card.rank + ' of ' + card.suit"
+        (pointerdown)="onHandPointerDown($event, card)"
+        (click)="selectHandCard(card)"
+      >
+        <div class="flip-card" *ngIf="card.id === flipCardId; else plainCard">
+          <app-playing-card
+            class="flip-front"
+            [suit]="suitOf(card)"
+            [rank]="rankOf(card)"
+            [draggable]="false"
+            [flippable]="false"
+          ></app-playing-card>
+          <app-playing-card
+            class="flip-back"
+            [faceUp]="false"
+            [draggable]="false"
+            [flippable]="false"
+          ></app-playing-card>
+        </div>
+        <ng-template #plainCard>
+          <app-playing-card
+            [suit]="suitOf(card)"
+            [rank]="rankOf(card)"
+            [draggable]="false"
+            [flippable]="false"
+          ></app-playing-card>
+        </ng-template>
+      </button>
+    </div>
   </div>
 
   <app-board
@@ -180,48 +144,7 @@
     <div class="action-error" *ngIf="actionError" role="alert">{{ actionError }}</div>
   </div>
 
-  <div class="player-hand" *ngIf="showTableCards && myHand.length > 0" aria-label="Your hand">
-    <button
-      type="button"
-      *ngFor="let card of myHand; trackBy: trackCard"
-      class="hand-card card-slot selection-ring"
-      [class.selected]="isSelected(card)"
-      [class.staged]="isStaged(card)"
-      [class.dragging]="card.id === dragCardId"
-      [class.inactive]="!canDiscardNow"
-      [style.transform]="card.id === dragCardId ? 'translate(' + dragDx + 'px, -14px) scale(1.06)' : null"
-      [attr.data-card-id]="card.id"
-      [attr.aria-pressed]="isSelected(card)"
-      [attr.aria-disabled]="!canDiscardNow || isStaged(card)"
-      [attr.aria-label]="card.rank + ' of ' + card.suit"
-      (pointerdown)="onHandPointerDown($event, card)"
-      (click)="selectHandCard(card)"
-    >
-      <div class="flip-card" *ngIf="card.id === flipCardId; else plainCard">
-        <app-playing-card
-          class="flip-front"
-          [suit]="suitOf(card)"
-          [rank]="rankOf(card)"
-          [draggable]="false"
-          [flippable]="false"
-        ></app-playing-card>
-        <app-playing-card
-          class="flip-back"
-          [faceUp]="false"
-          [draggable]="false"
-          [flippable]="false"
-        ></app-playing-card>
-      </div>
-      <ng-template #plainCard>
-        <app-playing-card
-          [suit]="suitOf(card)"
-          [rank]="rankOf(card)"
-          [draggable]="false"
-          [flippable]="false"
-        ></app-playing-card>
-      </ng-template>
-    </button>
-  </div>
+ 
 
   <div class="lobby-footer" style="display: flex; flex-direction: row; gap: 2rem;">
     <ng-container *ngIf="!isStarted">

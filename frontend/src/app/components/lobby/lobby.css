@@ -9,9 +9,6 @@
     flex-direction: column;
 }
 
-
-
-
 .player-count {
     font-size: clamp(0.75rem, 1.5vw, 1rem);
     color: rgba(255, 255, 255, 0.9);
@@ -59,21 +56,23 @@
     transform: translateY(-0.3vh);
 }
 
-/* Card Table */
-.card-table {
-    width: 100%;
-    aspect-ratio: 2.5 / 1;
-}
 
 .table-surface {
     position: relative;
-   width: 100%;
-    aspect-ratio: 2.5 / 1;
+    width: 100%;
+    aspect-ratio: 4 / 1;
     display: flex;
     align-items: center;
     justify-content: center;
 }
+.row {
+  display: flex;
+  gap: 16px;
+}
 
+.row > div {
+  flex: 1; /* equal widths */
+}
 .table-center {
     display: flex;
     flex-direction: column;
@@ -176,47 +175,6 @@
     flex-direction: column;
     align-items: center;
     gap: 1vh;
-}
-
-.player-avatar {
-    width: clamp(2.5rem, 6vw, 5rem);
-    height: clamp(2.5rem, 6vw, 5rem);
-    border-radius: 50%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: clamp(1.25rem, 3vw, 2.5rem);
-    font-weight: 700;
-    color: #ffffff;
-    border: 3px solid #ffffff;
-    box-shadow: 0 0.5vh 1.5vh rgba(0, 0, 0, 0.3);
-}
-
-.player-name {
-    font-size: clamp(0.7rem, 1.5vw, 1rem);
-    font-weight: 600;
-    color: #ffffff;
-    text-align: center;
-    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.host-badge {
-    font-size: clamp(0.6rem, 1.2vw, 0.75rem);
-    font-weight: 700;
-    color: #ffd700;
-    background: rgba(0, 0, 0, 0.5);
-    padding: 0.3vh 1.5%;
-    border-radius: 4px;
-    text-align: center;
-}
-
-.empty-spot {
-    opacity: 0.5;
 }
 
 .empty-icon {
