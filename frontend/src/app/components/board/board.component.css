@@ -37,6 +37,12 @@
   font-size: 0.7rem;
 }
 
+.qualification-label {
+  margin: -0.2rem 0 0;
+  color: #f1c40f;
+  font-size: 0.75rem;
+}
+
 .melds {
   display: flex;
   flex-direction: column;

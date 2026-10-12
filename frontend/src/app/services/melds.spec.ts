@@ -23,13 +23,13 @@ describe('melds', () => {
   describe('requirements', () => {
     it('should follow the qualified board table from the rules', () => {
       expect([1, 2, 3, 4, 5, 6, 7].map(n => requirementFor(n))).toEqual([
-        { sets: 2, runs: 0 },
-        { sets: 1, runs: 1 },
-        { sets: 0, runs: 2 },
-        { sets: 3, runs: 0 },
-        { sets: 2, runs: 1 },
-        { sets: 1, runs: 2 },
-        { sets: 0, runs: 3 }
+        { trips: 2, sets: 0 },
+        { trips: 1, sets: 1 },
+        { trips: 0, sets: 2 },
+        { trips: 3, sets: 0 },
+        { trips: 2, sets: 1 },
+        { trips: 1, sets: 2 },
+        { trips: 0, sets: 3 }
       ]);
     });
 
@@ -39,10 +39,10 @@ describe('melds', () => {
     });
 
     it('should describe a requirement in words', () => {
-      expect(describeRequirement({ sets: 2, runs: 0 })).toBe('two sets');
-      expect(describeRequirement({ sets: 1, runs: 1 })).toBe('one set and one run');
-      expect(describeRequirement({ sets: 1, runs: 2 })).toBe('one set and two runs');
-      expect(describeRequirement({ sets: 0, runs: 3 })).toBe('three runs');
+      expect(describeRequirement({ trips: 2, sets: 0 })).toBe('two trips');
+      expect(describeRequirement({ trips: 1, sets: 1 })).toBe('one trip and one set');
+      expect(describeRequirement({ trips: 1, sets: 2 })).toBe('one trip and two sets');
+      expect(describeRequirement({ trips: 0, sets: 3 })).toBe('three sets');
     });
 
     it('should name ranks, with 14 meaning an ace high', () => {

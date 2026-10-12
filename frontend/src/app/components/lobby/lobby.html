@@ -55,6 +55,35 @@
         </div>
         <div class="turn-hint" *ngIf="turnHint">{{ turnHint }}</div>
         <div class="requirement" *ngIf="requirementLabel">{{ requirementLabel }}</div>
+        <section class="hand-choices" *ngIf="showTableCards" aria-label="Your qualification hands">
+          <h3>Your qualification hands</h3>
+          <p>Choose one available hand this round. Each hand can qualify you only once.</p>
+          <div class="hand-choice-list">
+            <button
+              type="button"
+              class="hand-choice"
+              *ngFor="let option of handOptions"
+              [class.selected]="option.selected"
+              [disabled]="!canChooseHand || !option.available"
+              [attr.aria-pressed]="option.selected"
+              (click)="chooseQualificationHand(option.handNumber)"
+            >
+              <span>{{ option.label }}</span>
+              <strong>{{ option.status }}</strong>
+            </button>
+          </div>
+        </section>
+        <button
+          type="button"
+          class="btn-next-hand"
+          *ngIf="canDealNextHand"
+          (click)="dealNextHand()"
+        >
+          Deal hand {{ (gameState?.handNumber ?? 1) + 1 }}
+        </button>
+        <div class="requirement" *ngIf="isHandOver && gameState?.phase === 'handOver' && !canDealNextHand">
+          Waiting for the host to deal the next hand.
+        </div>
         <button
           type="button"
           class="btn-confirm-move"

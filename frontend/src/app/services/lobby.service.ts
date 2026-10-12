@@ -50,6 +50,9 @@ export interface GameState {
   // The table: one space per player holding the sets and runs that player has laid down
   board?: Record<string, Meld[]>;
   qualified?: Record<string, boolean>;
+  selectedHands?: Record<string, number | null>;
+  completedHands?: Record<string, number[]>;
+  removedHands?: Record<string, number[]>;
   winnerId?: string;
   startedAt?: string;
 }

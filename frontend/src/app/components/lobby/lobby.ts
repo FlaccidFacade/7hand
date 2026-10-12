@@ -15,9 +15,11 @@ import {
   drawCard,
   isHandOver,
   playBotStep,
-  playMelds
+  playMelds,
+  selectHand,
+  startNextHand
 } from '../../services/game-logic';
-import { buildRun, buildSet, describeRequirement, requirementFor } from '../../services/melds';
+import { buildRun, buildSet, describeRequirement, HAND_NUMBERS, handDifficulty, requirementFor } from '../../services/melds';
 import { BoardComponent, BoardSpace, MeldTarget } from '../board/board.component';
 import { WebRTCService } from '../../services/webrtc.service';
 import { SignalingService } from '../../services/signaling.service';
@@ -30,6 +32,14 @@ interface Player {
   displayName: string;
   position: number;
   isBot?: boolean;
+}
+
+interface HandOption {
+  handNumber: number;
+  label: string;
+  status: string;
+  available: boolean;
+  selected: boolean;
 }
 
 const AUTOSAVE_INTERVAL_MS = 30000;
@@ -281,7 +291,48 @@ export class Lobby implements OnInit, OnDestroy {
   }
 
   get canLayDown(): boolean {
-    return this.canDiscardNow && this.stagedMelds.length > 0;
+    return this.canDiscardNow && this.stagedMelds.length > 0 &&
+      (this.iAmQualified || !!this.currentUserId && this.gameState?.selectedHands?.[this.currentUserId] != null);
+  }
+
+  get canChooseHand(): boolean {
+    return this.showTableCards && !this.isHandOver && !!this.currentUserId && !this.iAmQualified;
+  }
+
+  get handOptions(): HandOption[] {
+    const playerId = this.currentUserId;
+    const state = this.gameState;
+    const completed = playerId ? state?.completedHands?.[playerId] ?? [] : [];
+    const removed = playerId ? state?.removedHands?.[playerId] ?? [] : [];
+    const selectedHand = playerId ? state?.selectedHands?.[playerId] : null;
+    return HAND_NUMBERS.map(handNumber => {
+      const selected = selectedHand === handNumber;
+      const wasCompleted = completed.includes(handNumber);
+      const wasRemoved = removed.includes(handNumber);
+      const available = !wasCompleted && !wasRemoved;
+      const status = selected && state?.qualified?.[playerId ?? '']
+        ? 'Qualified this round'
+        : selected
+          ? 'Selected this round'
+          : wasCompleted
+            ? 'Qualified in an earlier round'
+            : wasRemoved
+              ? 'Removed after an early finish'
+              : 'Available';
+      return {
+        handNumber,
+        label: `Hand ${handNumber}: ${describeRequirement(requirementFor(handNumber))} (${handDifficulty(handNumber)} cards)`,
+        status,
+        available,
+        selected
+      };
+    });
+  }
+
+  get canDealNextHand(): boolean {
+    return this.gameState?.phase === 'handOver' &&
+      (this.gameState.handNumber ?? 1) < (this.gameState.totalHands ?? 7) &&
+      (!!this.gameState.botGame || this.isHost);
   }
 
   // Selected cards can be added to any meld on the table once the player has qualified
@@ -290,11 +341,17 @@ export class Lobby implements OnInit, OnDestroy {
   }
 
   get requirementLabel(): string {
-    if (!this.showTableCards || this.isHandOver || this.iAmQualified) {
+    if (!this.showTableCards || this.isHandOver) {
       return '';
     }
-    const handNumber = this.gameState?.handNumber ?? 1;
-    return `Hand ${handNumber}: lay down ${describeRequirement(requirementFor(handNumber))} to qualify`;
+    if (this.iAmQualified) {
+      const handNumber = this.currentUserId ? this.gameState?.selectedHands?.[this.currentUserId] : null;
+      return `Qualified with ${handNumber ? describeRequirement(requirementFor(handNumber)) : 'your chosen hand'}`;
+    }
+    const handNumber = this.currentUserId ? this.gameState?.selectedHands?.[this.currentUserId] : null;
+    return handNumber
+      ? `Hand ${handNumber}: lay down exactly ${describeRequirement(requirementFor(handNumber))} to qualify`
+      : 'Choose one available hand to qualify this round';
   }
 
   get canConfirm(): boolean {
@@ -316,6 +373,9 @@ export class Lobby implements OnInit, OnDestroy {
       return '';
     }
     if (this.isHandOver) {
+      if (this.gameState?.phase === 'gameOver') {
+        return 'All seven hands are complete. Game over.';
+      }
       const winner = this.players.find(p => p.id === this.gameState?.winnerId)?.displayName;
       return winner ? `${winner} played all their cards. The hand is over.` : 'The hand is over.';
     }
@@ -332,6 +392,30 @@ export class Lobby implements OnInit, OnDestroy {
   selectSource(source: DrawSource): void {
     if (!this.canDrawNow) {
       return;
+    }
+
+    chooseQualificationHand(handNumber: number): void {
+      if (!this.gameState || !this.currentUserId || !this.canChooseHand) {
+        return;
+      }
+      try {
+        this.applyGameState(selectHand(this.gameState, this.currentUserId, handNumber));
+        this.actionError = null;
+      } catch (error) {
+        this.actionError = error instanceof Error ? error.message : 'Unable to choose that hand';
+      }
+    }
+
+    dealNextHand(): void {
+      if (!this.gameState || !this.canDealNextHand) {
+        return;
+      }
+      try {
+        this.applyGameState(startNextHand(this.gameState));
+        this.actionError = null;
+      } catch (error) {
+        this.actionError = error instanceof Error ? error.message : 'Unable to deal the next hand';
+      }
     }
     this.selectedSource = this.selectedSource === source ? null : source;
   }
@@ -534,6 +618,9 @@ export class Lobby implements OnInit, OnDestroy {
             isMe: id === this.currentUserId,
             isBot: !!player?.isBot,
             qualified: !!state.qualified?.[id],
+            handLabel: state.selectedHands?.[id]
+              ? describeRequirement(requirementFor(state.selectedHands[id]!))
+              : undefined,
             melds: state.board?.[id] ?? []
           };
         });
@@ -584,6 +671,9 @@ export class Lobby implements OnInit, OnDestroy {
       return this.botGameError;
     }
     if (this.isStarted && this.isHandOver) {
+      if (this.gameState?.phase === 'gameOver') {
+        return 'Game over';
+      }
       return `Hand ${this.gameState?.handNumber ?? 1} of ${this.gameState?.totalHands ?? 7} is over`;
     }
     if (this.isStarted) {

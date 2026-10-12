@@ -9,6 +9,7 @@
       <span class="space-name">{{ space.name }}</span>
       <span class="badge" *ngIf="space.qualified">Qualified</span>
     </header>
+    <p class="qualification-label">{{ space.handLabel || 'Choosing a hand' }}</p>
 
     <div class="melds">
       <button

@@ -478,6 +478,69 @@
     text-align: center;
 }
 
+.hand-choices {
+    width: min(94vw, 42rem);
+    padding: 0.5rem;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.72);
+    border-radius: 8px;
+    text-align: center;
+}
+
+.hand-choices h3,
+.hand-choices p {
+    margin: 0.25rem;
+    font-size: 0.85rem;
+}
+
+.hand-choice-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+    gap: 0.35rem;
+    max-height: 12rem;
+    overflow-y: auto;
+}
+
+.hand-choice {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    padding: 0.4rem;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    font-size: 0.75rem;
+    text-align: left;
+}
+
+.hand-choice:not(:disabled) {
+    cursor: pointer;
+}
+
+.hand-choice.selected {
+    border-color: #f1c40f;
+    background: rgba(241, 196, 15, 0.25);
+}
+
+.hand-choice:disabled:not(.selected) {
+    opacity: 0.62;
+}
+
+.hand-choice strong {
+    color: #f1c40f;
+}
+
+.btn-next-hand {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 8px;
+    background: #2ecc71;
+    color: #0b2a17;
+    font-weight: 700;
+    cursor: pointer;
+}
+
 .hand-actions {
     display: flex;
     flex-direction: column;

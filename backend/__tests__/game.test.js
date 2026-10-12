@@ -46,6 +46,9 @@ describe('game', () => {
     const state = dealGame(makePlayers(4));
     expect(state.board).toEqual({ p0: [], p1: [], p2: [], p3: [] });
     expect(state.qualified).toEqual({ p0: false, p1: false, p2: false, p3: false });
+    expect(state.selectedHands).toEqual({ p0: null, p1: null, p2: null, p3: null });
+    expect(state.completedHands).toEqual({ p0: [], p1: [], p2: [], p3: [] });
+    expect(state.removedHands).toEqual({ p0: [], p1: [], p2: [], p3: [] });
   });
 
   it('should reject an empty player list', () => {
