@@ -621,12 +621,13 @@ export class Lobby implements OnInit, OnDestroy {
             handLabel: state.selectedHands?.[id]
               ? describeRequirement(requirementFor(state.selectedHands[id]!))
               : undefined,
-            availableHandLabels: HAND_NUMBERS
-              .filter(handNumber =>
+            availableHandLabels: Object.fromEntries(
+              HAND_NUMBERS.map(handNumber => [
+                handNumber,
                 !(state.completedHands?.[id] ?? []).includes(handNumber) &&
                 !(state.removedHands?.[id] ?? []).includes(handNumber)
-              )
-              .map(handNumber => `Hand ${handNumber}: ${describeRequirement(requirementFor(handNumber))}`),
+              ])
+            ),
             melds: state.board?.[id] ?? []
           };
         });

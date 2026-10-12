@@ -379,6 +379,7 @@
 .player-hand {
     display: flex;
     flex-direction: row;
+    flex-wrap: wrap;
     justify-content: center;
     padding: 1rem 1rem 0.5rem;
     z-index: 2;
@@ -455,6 +456,9 @@
     font-size: clamp(0.75rem, 1.4vw, 1rem);
     color: rgba(255, 255, 255, 0.95);
     text-align: center;
+    
+    background: #5f5f5d;
+    border-radius: 6px;
 }
 
 .btn-confirm-move {
@@ -485,13 +489,10 @@
     background: rgba(0, 0, 0, 0.72);
     border-radius: 8px;
     text-align: center;
+    font-size: 0.65rem;
 }
 
-.hand-choices h3,
-.hand-choices p {
-    margin: 0.25rem;
-    font-size: 0.85rem;
-}
+
 
 .hand-choice-list {
     display: grid;
@@ -510,7 +511,7 @@
     border-radius: 6px;
     background: rgba(255, 255, 255, 0.1);
     color: #fff;
-    font-size: 0.75rem;
+    font-size: 0.55rem;
     text-align: left;
 }
 
@@ -542,6 +543,7 @@
 }
 
 .hand-actions {
+    flex: 0 0 100%;
     display: flex;
     flex-direction: column;
     align-items: center;

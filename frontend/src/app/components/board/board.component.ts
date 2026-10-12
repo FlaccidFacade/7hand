@@ -10,7 +10,7 @@ export interface BoardSpace {
   isBot: boolean;
   qualified: boolean;
   handLabel?: string;
-  availableHandLabels?: string[];
+  availableHandLabels?: Record<string, boolean>;
   melds: Meld[];
 }
 

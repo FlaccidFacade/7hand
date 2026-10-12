@@ -53,11 +53,9 @@
             <span class="pile-label">Discard</span>
           </div>
         </div>
-        <div class="turn-hint" *ngIf="turnHint">{{ turnHint }}</div>
+        <div class="turn-hint comet" *ngIf="turnHint">{{ turnHint }}</div>
         <div class="requirement" *ngIf="requirementLabel">{{ requirementLabel }}</div>
         <section class="hand-choices" *ngIf="showTableCards" aria-label="Your qualification hands">
-          <h3>Your qualification hands</h3>
-          <p>Choose one available hand this round. Each hand can qualify you only once.</p>
           <div class="hand-choice-list">
             <button
               type="button"
@@ -144,17 +142,7 @@
           ></app-playing-card>
         </ng-template>
       </button>
-    </div>
-  </div>
-
-  <app-board
-    *ngIf="showTableCards"
-    [spaces]="boardSpaces"
-    [targetable]="canAddToMeld"
-    (meldSelected)="addSelectedTo($event)"
-  ></app-board>
-
-  <div class="hand-actions" *ngIf="showTableCards && canDiscardNow">
+      <div class="hand-actions" *ngIf="showTableCards && canDiscardNow">
     <div class="staged-melds" *ngIf="stagedMelds.length > 0">
       <span class="staged-meld" *ngFor="let group of stagedMelds; let i = index">
         <strong>{{ group.type === 'set' ? 'Set' : 'Run' }}:</strong>
@@ -172,6 +160,18 @@
     <div class="action-hint" *ngIf="canAddToMeld">Select cards, then click a set or run on the table to add them to it</div>
     <div class="action-error" *ngIf="actionError" role="alert">{{ actionError }}</div>
   </div>
+    </div>
+    
+  </div>
+
+  <app-board
+    *ngIf="showTableCards"
+    [spaces]="boardSpaces"
+    [targetable]="canAddToMeld"
+    (meldSelected)="addSelectedTo($event)"
+  ></app-board>
+
+  
 
  
 
