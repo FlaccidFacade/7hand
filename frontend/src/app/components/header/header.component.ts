@@ -18,6 +18,7 @@ export class HeaderComponent {
   userCoins = 0;
   showProfileModal = false;
   showRulesModal = false;
+  showSettingsModal = false;
 
   currentUserId: string | null = null;
   currentUser: User | null = null;
@@ -51,8 +52,16 @@ export class HeaderComponent {
     this.showRulesModal = true;
   }
 
+  openSettingsModal(): void {
+    this.showSettingsModal = true;
+  }
+
   closeRulesModal(): void {
     this.showRulesModal = false;
+  }
+  
+  closeSettingsModal(): void {
+    this.showSettingsModal = false;
   }
 
   logout(): void {

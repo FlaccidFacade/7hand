@@ -67,6 +67,7 @@ export class Lobby implements OnInit, OnDestroy {
   
   showProfileModal = false;
   showRulesModal = false;
+  showSettingsModal = false;
 
   isStarted = false;
   gameState: GameState | null = null;
