@@ -8,7 +8,8 @@ import { PlayingCardComponent, Suit, Rank } from '../playing-card/playing-card.c
 import {
   DrawSource,
   MeldGroup,
-  addToMeld,
+  hasMetContract,
+  layOffCards,
   canDiscard,
   canDraw,
   discardCard,
@@ -16,10 +17,10 @@ import {
   isHandOver,
   playBotStep,
   playMelds,
-  selectHand,
+  selectContract,
   startNextHand
 } from '../../services/game-logic';
-import { buildRun, buildSet, describeRequirement, HAND_NUMBERS, handDifficulty, requirementFor } from '../../services/melds';
+import { buildRun, buildSet, contractDifficulty, contractForRound, CONTRACT_ROUNDS, describeContract } from '../../services/melds';
 import { BoardComponent, BoardSpace, MeldTarget } from '../board/board.component';
 import { WebRTCService } from '../../services/webrtc.service';
 import { SignalingService } from '../../services/signaling.service';
@@ -34,8 +35,8 @@ interface Player {
   isBot?: boolean;
 }
 
-interface HandOption {
-  handNumber: number;
+interface ContractOption {
+  roundNumber: number;
   label: string;
   status: string;
   available: boolean;
@@ -280,8 +281,8 @@ export class Lobby implements OnInit, OnDestroy {
     return isHandOver(this.gameState);
   }
 
-  get iAmQualified(): boolean {
-    return !!this.currentUserId && !!this.gameState?.qualified?.[this.currentUserId];
+  get hasMetContract(): boolean {
+    return !!this.currentUserId && !!this.gameState && hasMetContract(this.gameState, this.currentUserId);
   }
 
   get canThrow(): boolean {
@@ -296,38 +297,38 @@ export class Lobby implements OnInit, OnDestroy {
     return this.canDiscardNow && this.selectedCardIds.length >= 4;
   }
 
-  get canLayDown(): boolean {
+  get canMeld(): boolean {
     return this.canDiscardNow && this.stagedMelds.length > 0 &&
-      (this.iAmQualified || !!this.currentUserId && this.gameState?.selectedHands?.[this.currentUserId] != null);
+      (this.hasMetContract || !!this.currentUserId && this.gameState?.selectedContracts?.[this.currentUserId] != null);
   }
 
-  get canChooseHand(): boolean {
-    return this.showTableCards && !this.isHandOver && !!this.currentUserId && !this.iAmQualified;
+  get canChooseContract(): boolean {
+    return this.showTableCards && !this.isHandOver && !!this.currentUserId && !this.hasMetContract;
   }
 
-  get handOptions(): HandOption[] {
+  get contractOptions(): ContractOption[] {
     const playerId = this.currentUserId;
     const state = this.gameState;
-    const completed = playerId ? state?.completedHands?.[playerId] ?? [] : [];
-    const removed = playerId ? state?.removedHands?.[playerId] ?? [] : [];
-    const selectedHand = playerId ? state?.selectedHands?.[playerId] : null;
-    return HAND_NUMBERS.map(handNumber => {
-      const selected = selectedHand === handNumber;
-      const wasCompleted = completed.includes(handNumber);
-      const wasRemoved = removed.includes(handNumber);
+    const completed = playerId ? state?.completedContracts?.[playerId] ?? [] : [];
+    const removed = playerId ? state?.removedContracts?.[playerId] ?? [] : [];
+    const selectedContract = playerId ? state?.selectedContracts?.[playerId] : null;
+    return CONTRACT_ROUNDS.map(roundNumber => {
+      const selected = selectedContract === roundNumber;
+      const wasCompleted = completed.includes(roundNumber);
+      const wasRemoved = removed.includes(roundNumber);
       const available = !wasCompleted && !wasRemoved;
-      const status = selected && state?.qualified?.[playerId ?? '']
-        ? 'Qualified this round'
+      const status = selected && state?.contractMelded?.[playerId ?? '']
+        ? 'Contract melded this round'
         : selected
           ? 'Selected this round'
           : wasCompleted
-            ? 'Qualified in an earlier round'
+            ? 'Contract melded in an earlier round'
             : wasRemoved
               ? 'Removed after an early finish'
               : 'Available';
       return {
-        handNumber,
-        label: `Hand ${handNumber}: ${describeRequirement(requirementFor(handNumber))} (${handDifficulty(handNumber)} cards)`,
+        roundNumber,
+        label: `Round ${roundNumber}: ${describeContract(contractForRound(roundNumber))} (${contractDifficulty(roundNumber)} cards)`,
         status,
         available,
         selected
@@ -341,23 +342,23 @@ export class Lobby implements OnInit, OnDestroy {
       (!!this.gameState.botGame || this.isHost);
   }
 
-  // Selected cards can be added to any meld on the table once the player has qualified
-  get canAddToMeld(): boolean {
-    return this.canDiscardNow && this.iAmQualified && this.selectedCardIds.length > 0;
+  // Selected cards can be laid off onto any meld on the table after melding the contract.
+  get canLayOff(): boolean {
+    return this.canDiscardNow && this.hasMetContract && this.selectedCardIds.length > 0;
   }
 
-  get requirementLabel(): string {
+  get contractPrompt(): string {
     if (!this.showTableCards || this.isHandOver) {
       return '';
     }
-    if (this.iAmQualified) {
-      const handNumber = this.currentUserId ? this.gameState?.selectedHands?.[this.currentUserId] : null;
-      return `Qualified with ${handNumber ? describeRequirement(requirementFor(handNumber)) : 'your chosen hand'}`;
+    if (this.hasMetContract) {
+      const roundNumber = this.currentUserId ? this.gameState?.selectedContracts?.[this.currentUserId] : null;
+      return `Contract melded: ${roundNumber ? describeContract(contractForRound(roundNumber)) : 'your chosen contract'}`;
     }
-    const handNumber = this.currentUserId ? this.gameState?.selectedHands?.[this.currentUserId] : null;
-    return handNumber
-      ? `Hand ${handNumber}: lay down exactly ${describeRequirement(requirementFor(handNumber))} to qualify`
-      : 'Choose one available hand to qualify this round';
+    const roundNumber = this.currentUserId ? this.gameState?.selectedContracts?.[this.currentUserId] : null;
+    return roundNumber
+      ? `Round ${roundNumber}: meld exactly ${describeContract(contractForRound(roundNumber))} to meet the contract`
+      : 'Choose one available contract to meld this round';
   }
 
   get canConfirm(): boolean {
@@ -389,7 +390,7 @@ export class Lobby implements OnInit, OnDestroy {
       return 'Your turn: pick the mystery card from the deck or the face-up card';
     }
     if (this.canDiscardNow) {
-      return 'Play sets and runs on the table, then select a card to throw away';
+      return 'Meld your contract or lay off cards, then select a card to discard';
     }
     const name = this.currentTurnName;
     return name ? `Waiting for ${name}...` : '';
@@ -402,15 +403,15 @@ export class Lobby implements OnInit, OnDestroy {
     this.selectedSource = this.selectedSource === source ? null : source;
   }
 
-  chooseQualificationHand(handNumber: number): void {
-    if (!this.gameState || !this.currentUserId || !this.canChooseHand) {
+  chooseContract(roundNumber: number): void {
+    if (!this.gameState || !this.currentUserId || !this.canChooseContract) {
       return;
     }
     try {
-      this.applyGameState(selectHand(this.gameState, this.currentUserId, handNumber));
+      this.applyGameState(selectContract(this.gameState, this.currentUserId, roundNumber));
       this.actionError = null;
     } catch (error) {
-      this.actionError = error instanceof Error ? error.message : 'Unable to choose that hand';
+      this.actionError = error instanceof Error ? error.message : 'Unable to choose that contract';
     }
   }
 
@@ -470,8 +471,8 @@ export class Lobby implements OnInit, OnDestroy {
     this.actionError = null;
   }
 
-  layDown(): void {
-    if (!this.gameState || !this.currentUserId || !this.canLayDown) {
+  meldStagedCards(): void {
+    if (!this.gameState || !this.currentUserId || !this.canMeld) {
       return;
     }
     try {
@@ -480,22 +481,22 @@ export class Lobby implements OnInit, OnDestroy {
       this.selectedCardIds = [];
       this.actionError = null;
     } catch (error) {
-      this.actionError = error instanceof Error ? error.message : 'Unable to play those cards';
+      this.actionError = error instanceof Error ? error.message : 'Unable to meld those cards';
     }
   }
 
-  addSelectedTo(target: MeldTarget): void {
-    if (!this.gameState || !this.currentUserId || !this.canAddToMeld) {
+  layOffSelectedCards(target: MeldTarget): void {
+    if (!this.gameState || !this.currentUserId || !this.canLayOff) {
       return;
     }
     try {
       this.applyGameState(
-        addToMeld(this.gameState, this.currentUserId, target.ownerId, target.meldId, this.selectedCardIds)
+        layOffCards(this.gameState, this.currentUserId, target.ownerId, target.meldId, this.selectedCardIds)
       );
       this.selectedCardIds = [];
       this.actionError = null;
     } catch (error) {
-      this.actionError = error instanceof Error ? error.message : 'Unable to add those cards';
+      this.actionError = error instanceof Error ? error.message : 'Unable to lay off those cards';
     }
   }
 
@@ -623,18 +624,19 @@ export class Lobby implements OnInit, OnDestroy {
             name: player?.displayName ?? 'Player',
             isMe: id === this.currentUserId,
             isBot: !!player?.isBot,
-            qualified: !!state.qualified?.[id],
+            contractMelded: hasMetContract(state, id),
+            handCardCount: state.hands?.[id]?.length ?? 0,
             bidsUsed: state.bidsUsed?.[id] ?? 0,
             score: state.scores?.[id] ?? 0,
             wonHand: !!state.winnerId && state.winnerId === id,
-            handLabel: state.selectedHands?.[id]
-              ? describeRequirement(requirementFor(state.selectedHands[id]!))
+            contractLabel: state.selectedContracts?.[id]
+              ? describeContract(contractForRound(state.selectedContracts[id]!))
               : undefined,
-            availableHandLabels: Object.fromEntries(
-              HAND_NUMBERS.map(handNumber => [
-                handNumber,
-                !(state.completedHands?.[id] ?? []).includes(handNumber) &&
-                !(state.removedHands?.[id] ?? []).includes(handNumber)
+            availableContractRounds: Object.fromEntries(
+              CONTRACT_ROUNDS.map(roundNumber => [
+                roundNumber,
+                !(state.completedContracts?.[id] ?? []).includes(roundNumber) &&
+                !(state.removedContracts?.[id] ?? []).includes(roundNumber)
               ])
             ),
             melds: state.board?.[id] ?? []

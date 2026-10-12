@@ -62,11 +62,11 @@ function dealGame(players) {
     scores: Object.fromEntries(players.map(p => [p.id, 0])),
     // One table per lobby with a space for every player's sets and runs
     board: Object.fromEntries(players.map(p => [p.id, []])),
-    qualified: Object.fromEntries(players.map(p => [p.id, false])),
-    selectedHands: Object.fromEntries(players.map(p => [p.id, null])),
-    completedHands: Object.fromEntries(players.map(p => [p.id, []])),
+    contractMelded: Object.fromEntries(players.map(p => [p.id, false])),
+    selectedContracts: Object.fromEntries(players.map(p => [p.id, null])),
+    completedContracts: Object.fromEntries(players.map(p => [p.id, []])),
     bidsUsed: Object.fromEntries(players.map(p => [p.id, 0])),
-    removedHands: Object.fromEntries(players.map(p => [p.id, []])),
+    removedContracts: Object.fromEntries(players.map(p => [p.id, []])),
     startedAt: new Date().toISOString()
   };
 }

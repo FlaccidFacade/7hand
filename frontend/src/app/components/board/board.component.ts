@@ -8,12 +8,13 @@ export interface BoardSpace {
   name: string;
   isMe: boolean;
   isBot: boolean;
-  qualified: boolean;
+  contractMelded: boolean;
+  handCardCount: number;
   wonHand?: boolean;
   score?: number;
   bidsUsed?: number;
-  handLabel?: string;
-  availableHandLabels?: Record<string, boolean>;
+  contractLabel?: string;
+  availableContractRounds?: Record<string, boolean>;
   melds: Meld[];
 }
 

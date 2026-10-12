@@ -37,6 +37,8 @@
   [title]="'Game Rules'" 
   (close)="closeRulesModal()"
 >
+  <app-rules-display></app-rules-display>
+</app-modal>
 <!-- Settings Modal -->
 <app-modal 
   [isOpen]="showSettingsModal" 
@@ -45,5 +47,4 @@
 >
   <app-settings-display></app-settings-display>
 </app-modal>
-  <app-rules-display></app-rules-display>
-</app-modal>
+  

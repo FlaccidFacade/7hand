@@ -1,5 +1,5 @@
 import { Card, Meld } from './lobby.service';
-import { addCardsToMeld, buildRun, buildSet, describeRequirement, rankName, requirementFor } from './melds';
+import { buildRun, buildSet, contractForRound, describeContract, layOffCardsOnMeld, rankName } from './melds';
 
 const c = (id: string, suit: string, rank: string): Card => ({ id, suit, rank });
 const joker = (n: number): Card => c(`joker-${n}`, 'joker', 'JOKER');
@@ -21,28 +21,29 @@ function failure(result: { meld: Meld } | { error: string }): string {
 
 describe('melds', () => {
   describe('requirements', () => {
-    it('should follow the qualified board table from the rules', () => {
-      expect([1, 2, 3, 4, 5, 6, 7].map(n => requirementFor(n))).toEqual([
-        { trips: 2, sets: 0 },
-        { trips: 1, sets: 1 },
-        { trips: 0, sets: 2 },
-        { trips: 3, sets: 0 },
-        { trips: 2, sets: 1 },
-        { trips: 1, sets: 2 },
-        { trips: 0, sets: 3 }
+    it('should use the seven round contracts from the rules', () => {
+      expect([1, 2, 3, 4, 5, 6, 7].map(n => contractForRound(n))).toEqual([
+        { sets: 2, runs: 0 },
+        { sets: 1, runs: 1 },
+        { sets: 0, runs: 2 },
+        { sets: 3, runs: 0 },
+        { sets: 2, runs: 1 },
+        { sets: 1, runs: 2 },
+        { sets: 0, runs: 3 }
       ]);
     });
 
-    it('should clamp hand numbers outside 1-7', () => {
-      expect(requirementFor(0)).toEqual(requirementFor(1));
-      expect(requirementFor(9)).toEqual(requirementFor(7));
+    it('should clamp round numbers outside 1-7', () => {
+      expect(contractForRound(0)).toEqual(contractForRound(1));
+      expect(contractForRound(9)).toEqual(contractForRound(7));
     });
 
-    it('should describe a requirement in words', () => {
-      expect(describeRequirement({ trips: 2, sets: 0 })).toBe('two trips');
-      expect(describeRequirement({ trips: 1, sets: 1 })).toBe('one trip and one set');
-      expect(describeRequirement({ trips: 1, sets: 2 })).toBe('one trip and two sets');
-      expect(describeRequirement({ trips: 0, sets: 3 })).toBe('three sets');
+    it('should describe a contract in words', () => {
+      expect(describeContract({ sets: 2, runs: 0 })).toBe('2 sets');
+      expect(describeContract({ sets: 1, runs: 1 })).toBe('1 run and 1 set');
+      expect(describeContract({ sets: 2, runs: 1 })).toBe('2 sets and 1 run');
+      expect(describeContract({ sets: 1, runs: 2 })).toBe('2 runs and 1 set');
+      expect(describeContract({ sets: 0, runs: 3 })).toBe('3 runs');
     });
 
     it('should name ranks, with 14 meaning an ace high', () => {
@@ -147,75 +148,75 @@ describe('melds', () => {
     });
   });
 
-  describe('addCardsToMeld', () => {
-    const set = () => ok(buildSet([c('a', 'hearts', '7'), c('b', 'spades', '7'), c('c', 'clubs', '7')]));
+  describe('layOffCardsOnMeld', () => {
+    const kindSet = () => ok(buildSet([c('a', 'hearts', '7'), c('b', 'spades', '7'), c('c', 'clubs', '7')]));
     const run = () => ok(buildRun([c('5', 'hearts', '5'), c('6', 'hearts', '6'), c('7', 'hearts', '7'), c('8', 'hearts', '8')]));
 
     it('should add a matching card to a set', () => {
-      expect(ids(ok(addCardsToMeld(set(), [c('d', 'diamonds', '7')])))).toEqual(['a', 'b', 'c', 'd']);
+      expect(ids(ok(layOffCardsOnMeld(kindSet(), [c('d', 'diamonds', '7')])))).toEqual(['a', 'b', 'c', 'd']);
     });
 
     it('should add a joker to a set', () => {
-      expect(ids(ok(addCardsToMeld(set(), [joker(0)])))).toContain('joker-0');
+      expect(ids(ok(layOffCardsOnMeld(kindSet(), [joker(0)])))).toContain('joker-0');
     });
 
     it('should reject a card of another rank for a set', () => {
-      expect(failure(addCardsToMeld(set(), [c('x', 'hearts', '8')]))).toContain('match');
+      expect(failure(layOffCardsOnMeld(kindSet(), [c('x', 'hearts', '8')]))).toContain('match');
     });
 
     it('should reject a joker that would outnumber the real cards', () => {
       const withJoker = ok(buildSet([c('a', 'hearts', '7'), c('b', 'spades', '7'), joker(0)]));
-      const full = ok(addCardsToMeld(withJoker, [joker(1)]));
+      const full = ok(layOffCardsOnMeld(withJoker, [joker(1)]));
       expect(full.cards.length).toBe(4);
-      expect(failure(addCardsToMeld(full, [joker(2)]))).toContain('jokers');
+      expect(failure(layOffCardsOnMeld(full, [joker(2)]))).toContain('jokers');
     });
 
     it('should extend a run at the top', () => {
-      const meld = ok(addCardsToMeld(run(), [c('9', 'hearts', '9')]));
+      const meld = ok(layOffCardsOnMeld(run(), [c('9', 'hearts', '9')]));
       expect(ids(meld)).toEqual(['5', '6', '7', '8', '9']);
       expect(meld.low).toBe(5);
     });
 
     it('should extend a run at the bottom', () => {
-      const meld = ok(addCardsToMeld(run(), [c('4', 'hearts', '4')]));
+      const meld = ok(layOffCardsOnMeld(run(), [c('4', 'hearts', '4')]));
       expect(ids(meld)).toEqual(['4', '5', '6', '7', '8']);
       expect(meld.low).toBe(4);
     });
 
     it('should extend at both ends with several cards in any order', () => {
-      const meld = ok(addCardsToMeld(run(), [c('10', 'hearts', '10'), c('4', 'hearts', '4'), c('9', 'hearts', '9')]));
+      const meld = ok(layOffCardsOnMeld(run(), [c('10', 'hearts', '10'), c('4', 'hearts', '4'), c('9', 'hearts', '9')]));
       expect(ids(meld)).toEqual(['4', '5', '6', '7', '8', '9', '10']);
       expect(meld.low).toBe(4);
     });
 
     it('should place real cards before jokers so the joker does not take their spot', () => {
-      const meld = ok(addCardsToMeld(run(), [joker(0), c('9', 'hearts', '9')]));
+      const meld = ok(layOffCardsOnMeld(run(), [joker(0), c('9', 'hearts', '9')]));
       expect(ids(meld)).toEqual(['5', '6', '7', '8', '9', 'joker-0']);
     });
 
     it('should accept an ace after a king and before a two', () => {
       const high = ok(buildRun([c('9', 'spades', '9'), c('10', 'spades', '10'), c('j', 'spades', 'J'), c('q', 'spades', 'Q')]));
-      const withKing = ok(addCardsToMeld(high, [c('k', 'spades', 'K')]));
-      expect(ids(ok(addCardsToMeld(withKing, [c('a', 'spades', 'A')])))).toContain('a');
+      const withKing = ok(layOffCardsOnMeld(high, [c('k', 'spades', 'K')]));
+      expect(ids(ok(layOffCardsOnMeld(withKing, [c('a', 'spades', 'A')])))).toContain('a');
 
       const low = ok(buildRun([c('2', 'spades', '2'), c('3', 'spades', '3'), c('4', 'spades', '4'), c('5', 'spades', '5')]));
-      const lowAce = ok(addCardsToMeld(low, [c('a', 'spades', 'A')]));
+      const lowAce = ok(layOffCardsOnMeld(low, [c('a', 'spades', 'A')]));
       expect(lowAce.low).toBe(1);
     });
 
     it('should reject a card that leaves a gap, or is the wrong suit', () => {
-      expect(failure(addCardsToMeld(run(), [c('10', 'hearts', '10')]))).toContain('extend');
-      expect(failure(addCardsToMeld(run(), [c('9', 'spades', '9')]))).toContain('extend');
+      expect(failure(layOffCardsOnMeld(run(), [c('10', 'hearts', '10')]))).toContain('extend');
+      expect(failure(layOffCardsOnMeld(run(), [c('9', 'spades', '9')]))).toContain('extend');
     });
 
     it('should not mutate the meld it extends', () => {
       const original = run();
-      addCardsToMeld(original, [c('9', 'hearts', '9')]);
+      layOffCardsOnMeld(original, [c('9', 'hearts', '9')]);
       expect(original.cards.length).toBe(4);
     });
 
     it('should ask for cards when none are given', () => {
-      expect(failure(addCardsToMeld(run(), []))).toContain('Select');
+      expect(failure(layOffCardsOnMeld(run(), []))).toContain('Select');
     });
   });
 });

@@ -49,10 +49,10 @@ export interface GameState {
   scores?: Record<string, number>;
   // The table: one space per player holding the sets and runs that player has laid down
   board?: Record<string, Meld[]>;
-  qualified?: Record<string, boolean>;
-  selectedHands?: Record<string, number | null>;
-  completedHands?: Record<string, number[]>;
-  removedHands?: Record<string, number[]>;
+  contractMelded?: Record<string, boolean>;
+  selectedContracts?: Record<string, number | null>;
+  completedContracts?: Record<string, number[]>;
+  removedContracts?: Record<string, number[]>;
   // Bids spent by each player this hand; replenished on every deal
   bidsUsed?: Record<string, number>;
   winnerId?: string;
@@ -148,7 +148,7 @@ export class LobbyService {
    * Update local game state
    */
   updateGameState(gameState: GameState): void {
-    this.gameState$.next(gameState);
+    this.gameState$.next(normalizeGameState(gameState));
   }
 
   /**
@@ -195,9 +195,37 @@ export class LobbyService {
   }
 
   private applyLobby(lobby: Lobby): void {
-    this.currentLobby$.next(lobby);
     if (lobby.gamestate) {
-      this.gameState$.next(lobby.gamestate);
+      const normalized = normalizeGameState(lobby.gamestate);
+      this.currentLobby$.next({ ...lobby, gamestate: normalized });
+      this.gameState$.next(normalized);
+    } else {
+      this.currentLobby$.next(lobby);
     }
   }
+}
+
+type LegacyGameState = GameState & {
+  qualified?: Record<string, boolean>;
+  selectedHands?: Record<string, number | null>;
+  completedHands?: Record<string, number[]>;
+  removedHands?: Record<string, number[]>;
+};
+
+function normalizeGameState(gameState: GameState): GameState {
+  // Translate persisted snapshots created before the contract terminology migration.
+  const {
+    qualified,
+    selectedHands,
+    completedHands,
+    removedHands,
+    ...current
+  } = gameState as LegacyGameState;
+  return {
+    ...current,
+    contractMelded: current.contractMelded ?? qualified,
+    selectedContracts: current.selectedContracts ?? selectedHands,
+    completedContracts: current.completedContracts ?? completedHands,
+    removedContracts: current.removedContracts ?? removedHands
+  };
 }

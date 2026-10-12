@@ -1,15 +1,15 @@
 import { Card, GameState, Meld } from './lobby.service';
 import {
-  HandRequirement,
-  HAND_NUMBERS,
-  addCardsToMeld,
+  ContractRequirement,
+  CONTRACT_ROUNDS,
   buildRun,
   buildSet,
-  describeRequirement,
-  handDifficulty,
+  contractDifficulty,
+  contractForRound,
+  describeContract,
   isJoker,
-  rankValue,
-  requirementFor
+  layOffCardsOnMeld,
+  rankValue
 } from './melds';
 
 export type DrawSource = 'deck' | 'discard';
@@ -82,22 +82,26 @@ export function isHandOver(state: GameState | null): boolean {
   return state?.phase === 'handOver' || state?.phase === 'gameOver';
 }
 
-function availableHands(state: GameState, playerId: string): number[] {
-  const completed = state.completedHands?.[playerId] ?? [];
-  const removed = state.removedHands?.[playerId] ?? [];
-  return HAND_NUMBERS.filter(hand => !completed.includes(hand) && !removed.includes(hand));
+function availableContracts(state: GameState, playerId: string): number[] {
+  const completed = state.completedContracts?.[playerId] ?? [];
+  const removed = state.removedContracts?.[playerId] ?? [];
+  return CONTRACT_ROUNDS.filter(round => !completed.includes(round) && !removed.includes(round));
 }
 
-// An early finish removes the easiest remaining hand from each player who did not qualify.
+export function hasMetContract(state: GameState, playerId: string): boolean {
+  return !!state.contractMelded?.[playerId];
+}
+
+// An early finish removes the easiest remaining contract from each player who has not melded it.
 function finishHand(state: GameState, winnerId: string): GameState {
-  const removedHands = { ...state.removedHands };
+  const removedContracts = { ...state.removedContracts };
   for (const playerId of state.turnOrder ?? []) {
-    if (state.qualified?.[playerId]) {
+    if (hasMetContract(state, playerId)) {
       continue;
     }
-    const easiest = availableHands(state, playerId).sort((a, b) => handDifficulty(a) - handDifficulty(b))[0];
+    const easiest = availableContracts(state, playerId).sort((a, b) => contractDifficulty(a) - contractDifficulty(b))[0];
     if (easiest !== undefined) {
-      removedHands[playerId] = [...(removedHands[playerId] ?? []), easiest];
+      removedContracts[playerId] = [...(removedContracts[playerId] ?? []), easiest];
     }
   }
   const phase = (state.handNumber ?? 1) >= (state.totalHands ?? 7) ? 'gameOver' : 'handOver';
@@ -106,21 +110,21 @@ function finishHand(state: GameState, winnerId: string): GameState {
   for (const playerId of state.turnOrder ?? []) {
     scores[playerId] = (scores[playerId] ?? 0) + (playerId === winnerId ? 0 : handPoints(state.hands?.[playerId]));
   }
-  return { ...state, phase, winnerId, removedHands, scores, turnPhase: 'over' };
+  return { ...state, phase, winnerId, removedContracts, scores, turnPhase: 'over' };
 }
 
-/** Selects the one hand a player will qualify with this round. */
-export function selectHand(state: GameState, playerId: string, handNumber: number): GameState {
-  if (state.phase !== 'playing' || state.qualified?.[playerId]) {
-    throw new Error('You cannot change your hand choice now');
+/** Selects the contract the player will meld this round. */
+export function selectContract(state: GameState, playerId: string, roundNumber: number): GameState {
+  if (state.phase !== 'playing' || hasMetContract(state, playerId)) {
+    throw new Error('You cannot change your contract choice now');
   }
-  if (!availableHands(state, playerId).includes(handNumber)) {
-    throw new Error('That hand is no longer available');
+  if (!availableContracts(state, playerId).includes(roundNumber)) {
+    throw new Error('That contract is no longer available');
   }
-  return { ...state, selectedHands: { ...state.selectedHands, [playerId]: handNumber } };
+  return { ...state, selectedContracts: { ...state.selectedContracts, [playerId]: roundNumber } };
 }
 
-/** Deals the next round while preserving each player's completed and removed hands. */
+/** Deals the next hand while preserving each player's completed and removed contracts. */
 export function startNextHand(state: GameState): GameState {
   if (state.phase !== 'handOver') {
     throw new Error('The current hand is not over');
@@ -152,8 +156,8 @@ export function startNextHand(state: GameState): GameState {
     drawPile: deck,
     discardPile,
     board: Object.fromEntries(turnOrder.map(playerId => [playerId, []])),
-    qualified: Object.fromEntries(turnOrder.map(playerId => [playerId, false])),
-    selectedHands: Object.fromEntries(turnOrder.map(playerId => [playerId, null])),
+    contractMelded: Object.fromEntries(turnOrder.map(playerId => [playerId, false])),
+    selectedContracts: Object.fromEntries(turnOrder.map(playerId => [playerId, null])),
     bidsUsed: Object.fromEntries(turnOrder.map(playerId => [playerId, 0])),
     winnerId: undefined
   };
@@ -252,18 +256,15 @@ function takeCards(hand: Card[], cardIds: string[], taken: Set<string>): Card[] 
 
 function assertCanPlayCards(state: GameState, playerId: string): void {
   if (!canDiscard(state, playerId)) {
-    throw new Error('Draw a card before playing on the table');
+    throw new Error('Draw a card before melding or laying off');
   }
 }
 
-/**
- * Lays new sets and runs from the hand onto the player's space on the table.
- * A player's first play must meet the requirement for the current hand.
- */
+/** Melds new sets and runs from the hand onto the player's space on the table. */
 export function playMelds(state: GameState, playerId: string, groups: MeldGroup[]): GameState {
   assertCanPlayCards(state, playerId);
   if (groups.length === 0) {
-    throw new Error('Choose cards to play');
+    throw new Error('Choose cards to meld');
   }
 
   const hand = state.hands?.[playerId] ?? [];
@@ -277,41 +278,41 @@ export function playMelds(state: GameState, playerId: string, groups: MeldGroup[
     return result.meld;
   });
 
-  if (!state.qualified?.[playerId]) {
-    const handNumber = state.selectedHands
-      ? state.selectedHands[playerId]
+  if (!hasMetContract(state, playerId)) {
+    const roundNumber = state.selectedContracts
+      ? state.selectedContracts[playerId]
       : state.handNumber ?? 1;
-    if (handNumber === null || handNumber === undefined) {
-      throw new Error('Choose an available hand before laying down');
+    if (roundNumber === null || roundNumber === undefined) {
+      throw new Error('Choose an available contract before melding');
     }
-    if (!availableHands(state, playerId).includes(handNumber)) {
-      throw new Error('That hand is no longer available');
+    if (!availableContracts(state, playerId).includes(roundNumber)) {
+      throw new Error('That contract is no longer available');
     }
-    const req = requirementFor(handNumber);
-    const trips = melds.filter(m => m.type === 'set').length;
-    const sets = melds.filter(m => m.type === 'run').length;
-    if (trips !== req.trips || sets !== req.sets) {
-      throw new Error(`Hand ${handNumber} needs exactly ${describeRequirement(req)} to qualify`);
+    const requirement = contractForRound(roundNumber);
+    const sets = melds.filter(m => m.type === 'set').length;
+    const runs = melds.filter(m => m.type === 'run').length;
+    if (sets !== requirement.sets || runs !== requirement.runs) {
+      throw new Error(`Round ${roundNumber} requires exactly ${describeContract(requirement)} to meld the contract`);
     }
   }
 
   const remaining = hand.filter(c => !taken.has(c.id));
-  const selectedHand = state.selectedHands?.[playerId] ?? state.handNumber ?? 1;
-  const completedHands = !state.qualified?.[playerId] && state.completedHands
-    ? { ...state.completedHands, [playerId]: [...(state.completedHands[playerId] ?? []), selectedHand] }
-    : state.completedHands;
+  const selectedContract = state.selectedContracts?.[playerId] ?? state.handNumber ?? 1;
+  const completedContracts = !hasMetContract(state, playerId) && state.completedContracts
+    ? { ...state.completedContracts, [playerId]: [...(state.completedContracts[playerId] ?? []), selectedContract] }
+    : state.completedContracts;
   const next: GameState = {
     ...state,
     hands: { ...state.hands, [playerId]: remaining },
     board: { ...state.board, [playerId]: [...(state.board?.[playerId] ?? []), ...melds] },
-    qualified: { ...state.qualified, [playerId]: true },
-    completedHands
+    contractMelded: { ...state.contractMelded, [playerId]: true },
+    completedContracts
   };
   return remaining.length === 0 ? finishHand(next, playerId) : next;
 }
 
-/** Adds cards from the hand to a set or run already on the table, whoever laid it down. */
-export function addToMeld(
+/** Lays off cards from the hand onto any set or run already on the table. */
+export function layOffCards(
   state: GameState,
   playerId: string,
   ownerId: string,
@@ -319,8 +320,8 @@ export function addToMeld(
   cardIds: string[]
 ): GameState {
   assertCanPlayCards(state, playerId);
-  if (!state.qualified?.[playerId]) {
-    throw new Error('Qualify on the table before adding to other melds');
+  if (!hasMetContract(state, playerId)) {
+    throw new Error('Meld the contract before laying off cards onto other melds');
   }
   const melds = state.board?.[ownerId] ?? [];
   const index = melds.findIndex(m => m.id === meldId);
@@ -331,7 +332,7 @@ export function addToMeld(
   const hand = state.hands?.[playerId] ?? [];
   const taken = new Set<string>();
   const cards = takeCards(hand, cardIds, taken);
-  const result = addCardsToMeld(melds[index], cards);
+  const result = layOffCardsOnMeld(melds[index], cards);
   if ('error' in result) {
     throw new Error(result.error);
   }
@@ -417,15 +418,15 @@ function runCandidates(naturals: Card[], jokerCount: number): Candidate[] {
   return found;
 }
 
-// Searches the hand for non-overlapping melds that satisfy the hand's requirement
-function findQualifyingGroups(hand: Card[], req: HandRequirement): MeldGroup[] | null {
+// Finds non-overlapping meld groups that satisfy a contract.
+function findContractMelds(hand: Card[], requirement: ContractRequirement): MeldGroup[] | null {
   const jokers = hand.filter(isJoker);
   const naturals = hand.filter(c => !isJoker(c));
   const sets = setCandidates(naturals, jokers.length);
   const runs = runCandidates(naturals, jokers.length);
   const wanted: Array<'set' | 'run'> = [
-    ...Array<'run'>(req.sets).fill('run'),
-    ...Array<'set'>(req.trips).fill('set')
+    ...Array<'set'>(requirement.sets).fill('set'),
+    ...Array<'run'>(requirement.runs).fill('run')
   ];
 
   const search = (i: number, used: Set<string>, chosen: MeldGroup[]): MeldGroup[] | null => {
@@ -453,23 +454,23 @@ function findQualifyingGroups(hand: Card[], req: HandRequirement): MeldGroup[] |
   return search(0, new Set(), []);
 }
 
-// One step of a bot's playing phase: qualify on the table, or add a card to a meld already there
+// A bot melds its contract when possible, or lays off cards onto melds already on the table.
 function botPlayCards(state: GameState, botId: string): GameState | null {
   const hand = state.hands?.[botId] ?? [];
 
-  if (!state.qualified?.[botId]) {
-    let choice = state.selectedHands?.[botId] ?? null;
+  if (!hasMetContract(state, botId)) {
+    let choice = state.selectedContracts?.[botId] ?? null;
     if (!choice) {
-      const options = availableHands(state, botId);
-      choice = options.find(option => findQualifyingGroups(hand, requirementFor(option))) ?? options[0] ?? null;
+      const options = availableContracts(state, botId);
+      choice = options.find(option => findContractMelds(hand, contractForRound(option))) ?? options[0] ?? null;
       if (choice !== null) {
-        state = selectHand(state, botId, choice);
+        state = selectContract(state, botId, choice);
       }
     }
     if (choice === null) {
       return null;
     }
-    const groups = findQualifyingGroups(hand, requirementFor(choice));
+    const groups = findContractMelds(hand, contractForRound(choice));
     if (!groups) {
       return null;
     }
@@ -483,17 +484,17 @@ function botPlayCards(state: GameState, botId: string): GameState | null {
   for (const card of hand.filter(c => !isJoker(c))) {
     for (const [ownerId, melds] of Object.entries(state.board ?? {})) {
       for (const meld of melds) {
-        if (!('meld' in addCardsToMeld(meld, [card]))) {
+        if (!('meld' in layOffCardsOnMeld(meld, [card]))) {
           continue;
         }
-        return addToMeld(state, botId, ownerId, meld.id, [card.id]);
+        return layOffCards(state, botId, ownerId, meld.id, [card.id]);
       }
     }
   }
   return null;
 }
 
-/** Plays the next step (draw, play on the table, or discard) for a computer player. */
+/** Plays the next step (draw, meld/lay off, or discard) for a computer player. */
 export function playBotStep(state: GameState, botId: string): GameState {
   if (canDraw(state, botId)) {
     return drawCard(state, botId, chooseBotSource(state, botId));

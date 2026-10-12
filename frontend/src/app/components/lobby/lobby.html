@@ -68,24 +68,7 @@
         
         <div class="turn-hint comet "
          *ngIf="turnHint">{{ turnHint }}</div></div>
-        <div class="requirement" *ngIf="requirementLabel">{{ requirementLabel }}</div>
-        <section class="hand-choices" *ngIf="showTableCards" aria-label="Your qualification hands">
-          <div class="hand-choice-list">
-            <button
-              type="button"
-              class="hand-choice"
-              *ngFor="let option of handOptions"
-              [class.selected]="option.selected"
-              [disabled]="!canChooseHand || !option.available"
-              [attr.aria-pressed]="option.selected"
-              (click)="chooseQualificationHand(option.handNumber)"
-            >
-              <span>{{ option.label }}</span>
-              <strong>{{ option.status }}</strong>
-            </button>
-          </div>
-        </section>
-        <button
+         <button
           type="button"
           class="btn-next-hand"
           *ngIf="canDealNextHand"
@@ -112,6 +95,24 @@
         >
           Start Game
         </button>
+        <div class="requirement" *ngIf="contractPrompt">{{ contractPrompt }}</div>
+        <section class="hand-choices" *ngIf="showTableCards" aria-label="Your available contracts">
+          <div class="hand-choice-list">
+            <button
+              type="button"
+              class="hand-choice"
+              *ngFor="let option of contractOptions"
+              [class.selected]="option.selected"
+              [disabled]="!canChooseContract || !option.available"
+              [attr.aria-pressed]="option.selected"
+              (click)="chooseContract(option.roundNumber)"
+            >
+              <span>{{ option.label }}</span>
+              <strong>{{ option.status }}</strong>
+            </button>
+          </div>
+        </section>
+        
       </div>
 
     </div>
@@ -167,11 +168,11 @@
     <div class="action-buttons">
       <button type="button" class="btn-stage" [disabled]="!canStageSet" (click)="stageMeld('set')">Stage as set</button>
       <button type="button" class="btn-stage" [disabled]="!canStageRun" (click)="stageMeld('run')">Stage as run</button>
-      <button type="button" class="btn-lay-down" [disabled]="!canLayDown" (click)="layDown()">
-        Lay down {{ stagedMelds.length > 0 ? '(' + stagedMelds.length + ')' : '' }}
+      <button type="button" class="btn-lay-down" [disabled]="!canMeld" (click)="meldStagedCards()">
+        {{ hasMetContract ? 'Meld cards' : 'Meld contract' }} {{ stagedMelds.length > 0 ? '(' + stagedMelds.length + ')' : '' }}
       </button>
     </div>
-    <div class="action-hint" *ngIf="canAddToMeld">Select cards, then click a set or run on the table to add them to it</div>
+    <div class="action-hint" *ngIf="canLayOff">Select cards, then click a set or run on the table to lay them off</div>
     <div class="action-error" *ngIf="actionError" role="alert">{{ actionError }}</div>
   </div>
     </div>
@@ -181,8 +182,8 @@
   <app-board
     *ngIf="showTableCards"
     [spaces]="boardSpaces"
-    [targetable]="canAddToMeld"
-    (meldSelected)="addSelectedTo($event)"
+    [targetable]="canLayOff"
+    (meldSelected)="layOffSelectedCards($event)"
   ></app-board>
 
   

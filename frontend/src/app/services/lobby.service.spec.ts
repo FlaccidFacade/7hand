@@ -119,6 +119,29 @@ describe('LobbyService', () => {
     service.updateGameState(gameState);
   });
 
+  it('should normalize saved games using the previous contract field names', (done) => {
+    const legacyState = {
+      phase: 'playing',
+      qualified: { player: true },
+      selectedHands: { player: 2 },
+      completedHands: { player: [1] },
+      removedHands: { player: [3] }
+    } as GameState;
+
+    service.getGameState().subscribe(state => {
+      if (state) {
+        expect(state.contractMelded).toEqual({ player: true });
+        expect(state.selectedContracts).toEqual({ player: 2 });
+        expect(state.completedContracts).toEqual({ player: [1] });
+        expect(state.removedContracts).toEqual({ player: [3] });
+        expect(state).not.toEqual(jasmine.objectContaining({ qualified: jasmine.anything() }));
+        done();
+      }
+    });
+
+    service.updateGameState(legacyState);
+  });
+
   it('should add player to lobby', (done) => {
     const initialLobby: Lobby = {
       lobbyId: 'test-lobby',

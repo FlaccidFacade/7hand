@@ -8,25 +8,22 @@ const ACE_HIGH = 14;
 
 export type MeldResult = { meld: Meld } | { error: string };
 
-export interface HandRequirement {
-  trips: number;
+export interface ContractRequirement {
   sets: number;
+  runs: number;
 }
 
-// A trip is three of a kind; a set is a run of at least four cards.
-const REQUIREMENTS: HandRequirement[] = [
-  { trips: 2, sets: 0 },
-  { trips: 1, sets: 1 },
-  { trips: 0, sets: 2 },
-  { trips: 3, sets: 0 },
-  { trips: 2, sets: 1 },
-  { trips: 1, sets: 2 },
-  { trips: 0, sets: 3 }
+const REQUIREMENTS: ContractRequirement[] = [
+  { sets: 2, runs: 0 },
+  { sets: 1, runs: 1 },
+  { sets: 0, runs: 2 },
+  { sets: 3, runs: 0 },
+  { sets: 2, runs: 1 },
+  { sets: 1, runs: 2 },
+  { sets: 0, runs: 3 }
 ];
 
-const NUMBER_WORDS = ['no', 'one', 'two', 'three'];
-
-export const HAND_NUMBERS = REQUIREMENTS.map((_, index) => index + 1);
+export const CONTRACT_ROUNDS = REQUIREMENTS.map((_, index) => index + 1);
 
 export function isJoker(card: Card): boolean {
   return card.rank === 'JOKER';
@@ -43,24 +40,24 @@ export function rankName(value: number): string {
   return value === ACE_HIGH ? 'A' : RANKS[value - 1];
 }
 
-export function requirementFor(handNumber: number): HandRequirement {
-  return REQUIREMENTS[Math.min(Math.max(handNumber, 1), REQUIREMENTS.length) - 1];
+export function contractForRound(roundNumber: number): ContractRequirement {
+  return REQUIREMENTS[Math.min(Math.max(roundNumber, 1), REQUIREMENTS.length) - 1];
 }
 
-export function describeRequirement(req: HandRequirement): string {
-  const parts: string[] = [];
-  if (req.trips > 0) {
-    parts.push(`${NUMBER_WORDS[req.trips]} ${req.trips === 1 ? 'trip' : 'trips'}`);
-  }
-  if (req.sets > 0) {
-    parts.push(`${NUMBER_WORDS[req.sets]} ${req.sets === 1 ? 'set' : 'sets'}`);
-  }
+export function describeContract(requirement: ContractRequirement): string {
+  const groups = [
+    { count: requirement.sets, singular: 'set', plural: 'sets' },
+    { count: requirement.runs, singular: 'run', plural: 'runs' }
+  ]
+    .filter(group => group.count > 0)
+    .sort((a, b) => b.count - a.count || (a.singular === 'run' ? -1 : 1));
+  const parts = groups.map(({ count, singular, plural }) => `${count} ${count === 1 ? singular : plural}`);
   return parts.join(' and ');
 }
 
-export function handDifficulty(handNumber: number): number {
-  const requirement = requirementFor(handNumber);
-  return requirement.trips * MIN_SET_SIZE + requirement.sets * MIN_RUN_SIZE;
+export function contractDifficulty(roundNumber: number): number {
+  const requirement = contractForRound(roundNumber);
+  return requirement.sets * MIN_SET_SIZE + requirement.runs * MIN_RUN_SIZE;
 }
 
 function splitJokers(cards: Card[]): { naturals: Card[]; jokers: Card[] } {
@@ -140,7 +137,7 @@ function jokersBalanced(cards: Card[]): boolean {
 }
 
 /** Adds cards to a meld that is already on the table; runs grow at either end. */
-export function addCardsToMeld(meld: Meld, cards: Card[]): MeldResult {
+export function layOffCardsOnMeld(meld: Meld, cards: Card[]): MeldResult {
   if (cards.length === 0) {
     return { error: 'Select cards to add' };
   }

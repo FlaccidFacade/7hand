@@ -4,7 +4,7 @@ import { Card, Meld } from '../../services/lobby.service';
 
 const card = (id: string, suit: string, rank: string): Card => ({ id, suit, rank });
 
-const set: Meld = {
+const kindSet: Meld = {
   id: 'meld-s',
   type: 'set',
   rank: '7',
@@ -19,8 +19,26 @@ const run: Meld = {
 };
 
 const spaces: BoardSpace[] = [
-  { playerId: 'me', name: 'Me', isMe: true, isBot: false, qualified: true, melds: [set, run] },
-  { playerId: 'bot-1', name: 'Bot 1', isMe: false, isBot: true, qualified: false, melds: [] }
+  {
+    playerId: 'me',
+    name: 'Me',
+    isMe: true,
+    isBot: false,
+    contractMelded: true,
+    contractLabel: 'two sets',
+    handCardCount: 5,
+    melds: [kindSet, run]
+  },
+  {
+    playerId: 'bot-1',
+    name: 'Bot 1',
+    isMe: false,
+    isBot: true,
+    contractMelded: false,
+    contractLabel: 'one run and one set',
+    handCardCount: 1,
+    melds: []
+  }
 ];
 
 describe('BoardComponent', () => {
@@ -67,19 +85,31 @@ describe('BoardComponent', () => {
     expect(cards[2].classList).toContain('joker');
   });
 
-  it('should show an empty space and a qualified badge where appropriate', () => {
+  it('should show an empty space and a contract-melded badge where appropriate', () => {
     expect(el.querySelector('.space[data-player-id="bot-1"] .empty')).not.toBeNull();
     expect(el.querySelector('.space[data-player-id="me"] .badge')).not.toBeNull();
     expect(el.querySelector('.space[data-player-id="bot-1"] .badge')).toBeNull();
   });
 
+  it('should show each player hand count beside their selected contract', () => {
+    const ownSpace = el.querySelector('.space[data-player-id="me"]') as HTMLElement;
+    const botSpace = el.querySelector('.space[data-player-id="bot-1"]') as HTMLElement;
+
+    expect(ownSpace.querySelector('.contract-summary')?.textContent).toContain('two sets');
+    expect(ownSpace.querySelector('.hand-card-count')?.textContent).toBe('5');
+    expect(ownSpace.querySelector('.hand-card-count')?.getAttribute('aria-label')).toBe('5 cards in hand');
+    expect(botSpace.querySelector('.contract-summary')?.textContent).toContain('one run and one set');
+    expect(botSpace.querySelector('.hand-card-count')?.textContent).toBe('1');
+    expect(botSpace.querySelector('.hand-card-count')?.getAttribute('aria-label')).toBe('1 card in hand');
+  });
+
   it('should label sets and runs', () => {
-    expect(component.meldLabel(set)).toBe('Set of 7s');
+    expect(component.meldLabel(kindSet)).toBe('Set of 7s');
     expect(component.meldLabel(run)).toBe('Run ♥ 4-7');
   });
 
   it('should say which card a joker stands in for', () => {
-    expect(component.cardTitle(set, 2)).toBe('Joker standing in for 7');
+    expect(component.cardTitle(kindSet, 2)).toBe('Joker standing in for 7');
     expect(component.cardTitle(run, 1)).toBe('Joker standing in for 5');
     expect(component.cardTitle(run, 0)).toBeNull();
   });

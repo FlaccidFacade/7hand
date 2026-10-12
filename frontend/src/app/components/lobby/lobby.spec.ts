@@ -541,10 +541,10 @@ describe('Lobby', () => {
         drawPile: [card('d1', 'clubs', '5')],
         discardPile: [card('older', 'hearts', '3')],
         board: { host: [], 'bot-1': [botSet] },
-        qualified: { host: false, 'bot-1': true },
-        selectedHands: { host: 1, 'bot-1': 1 },
-        completedHands: { host: [], 'bot-1': [1] },
-        removedHands: { host: [], 'bot-1': [] },
+        contractMelded: { host: false, 'bot-1': true },
+        selectedContracts: { host: 1, 'bot-1': 1 },
+        completedContracts: { host: [], 'bot-1': [1] },
+        removedContracts: { host: [], 'bot-1': [] },
         ...overrides
       });
 
@@ -556,7 +556,7 @@ describe('Lobby', () => {
       const pick = (...ids: string[]) => ids.forEach(id => press(el().querySelector(`.hand-card[data-card-id="${id}"]`)));
       const button = (selector: string) => el().querySelector(selector) as HTMLButtonElement;
       const stage = (type: 'set' | 'run') => press(el().querySelectorAll('.btn-stage')[type === 'set' ? 0 : 1]);
-      const stageTwoSets = () => {
+      const stageTwoKindSets = () => {
         pick('7h', '7s', '7d');
         stage('set');
         pick('9h', '9s', '9c');
@@ -574,21 +574,24 @@ describe('Lobby', () => {
         expect(el().querySelectorAll('app-board .space').length).toBe(2);
         expect(meldsOf('bot-1').length).toBe(1);
         expect(meldsOf('host').length).toBe(0);
-        expect(el().querySelector('.space[data-player-id="host"] .available-hands')?.textContent).toContain('Hand 1: two trips');
-        expect(el().querySelector('.space[data-player-id="host"] .available-hands')?.textContent).toContain('Hand 7: three sets');
+        expect(el().querySelector('.space[data-player-id="host"] .available-contracts')?.textContent).toContain('1');
+        expect(el().querySelector('.space[data-player-id="host"] .available-contracts')?.textContent).toContain('7');
+        expect(el().querySelector('.space[data-player-id="host"] .contract-label')?.textContent).toContain('two sets');
+        expect(el().querySelector('.space[data-player-id="host"] .hand-card-count')?.textContent).toBe('8');
+        expect(el().querySelector('.space[data-player-id="bot-1"] .hand-card-count')?.textContent).toBe('1');
       });
 
-      it('should say what the player must lay down to qualify', () => {
-        expect(el().querySelector('.requirement')?.textContent).toContain('Hand 1: lay down exactly two trips to qualify');
+      it('should say what the player must meld for the contract', () => {
+        expect(el().querySelector('.requirement')?.textContent).toContain('Round 1: meld exactly two sets to meet the contract');
         expect(el().querySelectorAll('.hand-choice').length).toBe(7);
-        expect(el().querySelector('.hand-choice.selected')?.textContent).toContain('two trips');
+        expect(el().querySelector('.hand-choice.selected')?.textContent).toContain('two sets');
       });
 
-      it('should let the player choose a different available hand for this round', () => {
-        component.chooseQualificationHand(7);
+      it('should let the player choose a different available contract for this round', () => {
+        component.chooseContract(7);
 
-        expect(component.gameState?.selectedHands?.['host']).toBe(7);
-        expect(el().querySelector('.hand-choice.selected')?.textContent).toContain('three sets');
+        expect(component.gameState?.selectedContracts?.['host']).toBe(7);
+        expect(el().querySelector('.hand-choice.selected')?.textContent).toContain('three runs');
       });
 
       it('should only offer to stage a set or a run once enough cards are selected', () => {
@@ -602,8 +605,8 @@ describe('Lobby', () => {
         expect(component.canStageRun).toBe(true);
       });
 
-      it('should stage sets and lay them down together to qualify', () => {
-        stageTwoSets();
+      it('should stage sets and meld the contract together', () => {
+        stageTwoKindSets();
 
         expect(component.stagedMelds.length).toBe(2);
         expect(el().querySelectorAll('.staged-meld').length).toBe(2);
@@ -612,7 +615,7 @@ describe('Lobby', () => {
         press(el().querySelector('.btn-lay-down'));
 
         expect(meldsOf('host').length).toBe(2);
-        expect(component.iAmQualified).toBe(true);
+        expect(component.hasMetContract).toBe(true);
         expect(component.myHand.map(c => c.id)).toEqual(['ks', '2c']);
         expect(component.stagedMelds).toEqual([]);
         expect(el().querySelector('.space[data-player-id="host"] .badge')).not.toBeNull();
@@ -628,12 +631,12 @@ describe('Lobby', () => {
         expect(component.stagedMelds.length).toBe(0);
       });
 
-      it('should explain when the staged melds do not qualify yet', () => {
+      it('should explain when the staged melds do not meet the contract yet', () => {
         pick('7h', '7s', '7d');
         stage('set');
         press(el().querySelector('.btn-lay-down'));
 
-        expect(el().querySelector('.action-error')?.textContent).toContain('Hand 1 needs exactly two trips to qualify');
+        expect(el().querySelector('.action-error')?.textContent).toContain('Round 1 requires exactly two sets to meld the contract');
         expect(meldsOf('host').length).toBe(0);
       });
 
@@ -654,19 +657,19 @@ describe('Lobby', () => {
         expect(component.selectedCardIds).toEqual([]);
       });
 
-      it('should not let melds be targeted before qualifying', () => {
+      it('should not let melds be targeted before melding the contract', () => {
         pick('ks');
-        expect(component.canAddToMeld).toBe(false);
+        expect(component.canLayOff).toBe(false);
 
         press(el().querySelector('.space[data-player-id="bot-1"] .meld'));
         expect(component.myHand.length).toBe(8);
       });
 
-      it('should add selected cards to a set another player played once qualified', () => {
-        stageTwoSets();
+      it('should lay off selected cards onto another player\'s set after melding the contract', () => {
+        stageTwoKindSets();
         press(el().querySelector('.btn-lay-down'));
         pick('ks');
-        expect(component.canAddToMeld).toBe(true);
+        expect(component.canLayOff).toBe(true);
 
         press(el().querySelector('.space[data-player-id="bot-1"] .meld'));
 
@@ -676,7 +679,7 @@ describe('Lobby', () => {
       });
 
       it('should show why a card cannot be added to a meld', () => {
-        stageTwoSets();
+        stageTwoKindSets();
         press(el().querySelector('.btn-lay-down'));
         pick('2c');
         press(el().querySelector('.space[data-player-id="bot-1"] .meld'));

@@ -11,8 +11,14 @@
         <span class="space-score" title="Total points this game" aria-label="Total points">{{ space.score ?? 0 }}</span>
         <span class="space-name">{{ space.name }}</span>
       </span>
-      <span class="badge" *ngIf="space.qualified">Qualified</span>
-      <span class="qualification-label">{{ space.handLabel || 'Choosing a hand' }}</span>
+      <span class="badge" *ngIf="space.contractMelded">Contract melded</span>
+      <span class="contract-summary">
+        <span class="contract-label">{{ space.contractLabel || 'Choosing a contract' }}</span>
+        <span
+          class="hand-card-count"
+          [attr.aria-label]="space.handCardCount + (space.handCardCount === 1 ? ' card in hand' : ' cards in hand')"
+        >{{ space.handCardCount }}</span>
+      </span>
     </header>
     
     
@@ -22,8 +28,8 @@
             <span class="circle bid" [class.used]="bid < (space.bidsUsed ?? 0)"></span>
           }
         </div>
-        <div class="circles available-hands">
-          @for (entry of space.availableHandLabels! | keyvalue; track entry.key) {
+        <div class="circles available-contracts" aria-label="Available contracts">
+          @for (entry of space.availableContractRounds! | keyvalue; track entry.key) {
             <span class="circle" [class.filled]="entry.value">{{ entry.key }}</span>
           }
         </div>
