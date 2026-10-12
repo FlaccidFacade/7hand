@@ -10,6 +10,10 @@
       <span class="badge" *ngIf="space.qualified">Qualified</span>
     </header>
     <p class="qualification-label">{{ space.handLabel || 'Choosing a hand' }}</p>
+    <p class="available-hands" *ngIf="space.availableHandLabels?.length">
+      Available: {{ space.availableHandLabels?.join(' · ') }}
+    </p>
+    <p class="available-hands" *ngIf="!space.availableHandLabels?.length">No hands available</p>
 
     <div class="melds">
       <button

@@ -42,13 +42,6 @@ describe('game-logic', () => {
       expect(next.currentTurn).toBe('me');
     });
 
-    it('should reject laying down more meld groups than the selected hand requires', () => {
-      const fives = [card('5h', 'hearts', '5'), card('5s', 'spades', '5'), card('5c', 'clubs', '5')];
-      const state = playState({ hands: { me: [...sevens, ...nines, ...fives], 'bot-1': [] } });
-      expect(() => playMelds(state, 'me', [...twoSets, { type: 'set' as const, cardIds: fives.map(c => c.id) }]))
-        .toThrowError(/exactly two trips/);
-    });
-
     it('should take the top face-up card from the discard pile', () => {
       const next = drawCard(makeState(), 'me', 'discard');
 
@@ -83,35 +76,6 @@ describe('game-logic', () => {
       const empty = makeState({ drawPile: [], discardPile: [] });
       expect(() => drawCard(empty, 'me', 'deck')).toThrow();
       expect(() => drawCard(empty, 'me', 'discard')).toThrow();
-    });
-  });
-
-  describe('round progression', () => {
-    it('should remove the easiest remaining hand when players are still unqualified at the end', () => {
-      const state = playState({
-        turnPhase: 'discard',
-        hands: { me: [card('last', 'spades', 'K')], 'bot-1': [card('b', 'clubs', '4')] }
-      });
-      const ended = discardCard(state, 'me', 'last');
-      expect(ended.removedHands).toEqual({ me: [1], 'bot-1': [1] });
-    });
-
-    it('should deal the next round while preserving completed and removed hands', () => {
-      const state = playState({
-        turnPhase: 'discard',
-        hands: { me: [card('last', 'spades', 'K')], 'bot-1': [card('b', 'clubs', '4')] }
-      });
-      const next = startNextHand(discardCard(state, 'me', 'last'));
-
-      expect(next.handNumber).toBe(2);
-      expect(next.phase).toBe('playing');
-      expect(next.currentTurn).toBe('bot-1');
-      expect(next.turnPhase).toBe('draw');
-      expect(next.hands!['me']).toHaveSize(11);
-      expect(next.hands!['bot-1']).toHaveSize(11);
-      expect(next.qualified).toEqual({ me: false, 'bot-1': false });
-      expect(next.selectedHands).toEqual({ me: null, 'bot-1': null });
-      expect(next.removedHands).toEqual({ me: [1], 'bot-1': [1] });
     });
   });
 
@@ -179,7 +143,7 @@ describe('game-logic', () => {
     const sevens = [card('7h', 'hearts', '7'), card('7s', 'spades', '7'), card('7d', 'diamonds', '7')];
     const nines = [card('9h', 'hearts', '9'), card('9s', 'spades', '9'), card('9c', 'clubs', '9')];
 
-    // Hand 1 of the rules: qualify with two sets
+    // Hand 1 of the rules: qualify with two trips
     function playState(overrides: Partial<GameState> = {}): GameState {
       return makeState({
         handNumber: 1,
@@ -225,6 +189,13 @@ describe('game-logic', () => {
 
       it('should reject a first play that does not meet the hand requirement', () => {
         expect(() => playMelds(playState(), 'me', [twoSets[0]])).toThrowError(/Hand 1 needs exactly two trips to qualify/);
+      });
+
+      it('should reject laying down more meld groups than the selected hand requires', () => {
+        const fives = [card('5h', 'hearts', '5'), card('5s', 'spades', '5'), card('5c', 'clubs', '5')];
+        const state = playState({ hands: { me: [...sevens, ...nines, ...fives], 'bot-1': [] } });
+        expect(() => playMelds(state, 'me', [...twoSets, { type: 'set' as const, cardIds: fives.map(c => c.id) }]))
+          .toThrowError(/exactly two trips/);
       });
 
       it('should expect a set and a run on hand two', () => {
@@ -389,6 +360,35 @@ describe('game-logic', () => {
         expect(next.winnerId).toBe('me');
         expect(next.currentTurn).toBe('me');
         expect(next.discardPile!.map(c => c.id)).toContain('ks');
+      });
+    });
+
+    describe('round progression', () => {
+      it('should remove the easiest remaining hand when players are still unqualified at the end', () => {
+        const state = playState({
+          turnPhase: 'discard',
+          hands: { me: [card('last', 'spades', 'K')], 'bot-1': [card('b', 'clubs', '4')] }
+        });
+        const ended = discardCard(state, 'me', 'last');
+        expect(ended.removedHands).toEqual({ me: [1], 'bot-1': [1] });
+      });
+
+      it('should deal the next round while preserving completed and removed hands', () => {
+        const state = playState({
+          turnPhase: 'discard',
+          hands: { me: [card('last', 'spades', 'K')], 'bot-1': [card('b', 'clubs', '4')] }
+        });
+        const next = startNextHand(discardCard(state, 'me', 'last'));
+
+        expect(next.handNumber).toBe(2);
+        expect(next.phase).toBe('playing');
+        expect(next.currentTurn).toBe('bot-1');
+        expect(next.turnPhase).toBe('draw');
+        expect(next.hands!['me']).toHaveSize(11);
+        expect(next.hands!['bot-1']).toHaveSize(11);
+        expect(next.qualified).toEqual({ me: false, 'bot-1': false });
+        expect(next.selectedHands).toEqual({ me: null, 'bot-1': null });
+        expect(next.removedHands).toEqual({ me: [1], 'bot-1': [1] });
       });
     });
 

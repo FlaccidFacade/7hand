@@ -393,31 +393,31 @@ export class Lobby implements OnInit, OnDestroy {
     if (!this.canDrawNow) {
       return;
     }
-
-    chooseQualificationHand(handNumber: number): void {
-      if (!this.gameState || !this.currentUserId || !this.canChooseHand) {
-        return;
-      }
-      try {
-        this.applyGameState(selectHand(this.gameState, this.currentUserId, handNumber));
-        this.actionError = null;
-      } catch (error) {
-        this.actionError = error instanceof Error ? error.message : 'Unable to choose that hand';
-      }
-    }
-
-    dealNextHand(): void {
-      if (!this.gameState || !this.canDealNextHand) {
-        return;
-      }
-      try {
-        this.applyGameState(startNextHand(this.gameState));
-        this.actionError = null;
-      } catch (error) {
-        this.actionError = error instanceof Error ? error.message : 'Unable to deal the next hand';
-      }
-    }
     this.selectedSource = this.selectedSource === source ? null : source;
+  }
+
+  chooseQualificationHand(handNumber: number): void {
+    if (!this.gameState || !this.currentUserId || !this.canChooseHand) {
+      return;
+    }
+    try {
+      this.applyGameState(selectHand(this.gameState, this.currentUserId, handNumber));
+      this.actionError = null;
+    } catch (error) {
+      this.actionError = error instanceof Error ? error.message : 'Unable to choose that hand';
+    }
+  }
+
+  dealNextHand(): void {
+    if (!this.gameState || !this.canDealNextHand) {
+      return;
+    }
+    try {
+      this.applyGameState(startNextHand(this.gameState));
+      this.actionError = null;
+    } catch (error) {
+      this.actionError = error instanceof Error ? error.message : 'Unable to deal the next hand';
+    }
   }
 
   isSelected(card: Card): boolean {
@@ -621,6 +621,12 @@ export class Lobby implements OnInit, OnDestroy {
             handLabel: state.selectedHands?.[id]
               ? describeRequirement(requirementFor(state.selectedHands[id]!))
               : undefined,
+            availableHandLabels: HAND_NUMBERS
+              .filter(handNumber =>
+                !(state.completedHands?.[id] ?? []).includes(handNumber) &&
+                !(state.removedHands?.[id] ?? []).includes(handNumber)
+              )
+              .map(handNumber => `Hand ${handNumber}: ${describeRequirement(requirementFor(handNumber))}`),
             melds: state.board?.[id] ?? []
           };
         });
