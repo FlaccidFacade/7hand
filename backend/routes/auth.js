@@ -1,14 +1,20 @@
 const express = require('express');
 const { loadUserByUsernameFromDb, updateUserActivity } = require('../user');
+const { createAndSaveLobby, serializeLobby } = require('../lobby');
 const logger = require('../logger');
 
 const router = express.Router();
 
 // Initialize userManager - will be set by index.js
 let userManager;
+let lobbyManager;
 
 function setUserManager(manager) {
   userManager = manager;
+}
+
+function setLobbyManager(manager) {
+  lobbyManager = manager;
 }
 
 router.post('/login', async (req, res) => {
@@ -52,10 +58,15 @@ router.post('/login', async (req, res) => {
     
     logger.info(`User logged in: ${user.username} (${user.id})`);
     
+    // Every login gets a fresh lobby; people and bots both play through this lobby object
+    const lobby = await createAndSaveLobby(lobbyManager, user.toSafeObject());
+    logger.info(`Lobby created on login: ${lobby.code} for user ${user.username}`);
+
     // Return user without sensitive data
     res.json({
       success: true,
-      user: user.toSafeObject()
+      user: user.toSafeObject(),
+      lobby: serializeLobby(lobby)
     });
   } catch (error) {
     logger.error('Login error', error);
@@ -65,3 +76,4 @@ router.post('/login', async (req, res) => {
 
 module.exports = router;
 module.exports.setUserManager = setUserManager;
+module.exports.setLobbyManager = setLobbyManager;

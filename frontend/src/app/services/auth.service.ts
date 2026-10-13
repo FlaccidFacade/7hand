@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { User } from './user.service';
+import { Lobby, LobbyService } from './lobby.service';
 
 export interface LoginCredentials {
   username: string;
@@ -12,6 +13,7 @@ export interface LoginCredentials {
 export interface LoginResponse {
   success: boolean;
   user: User;
+  lobby?: Lobby;
 }
 
 @Injectable({
@@ -22,7 +24,7 @@ export class AuthService {
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
 
-  constructor(private http: HttpClient) {
+  constructor(private http: HttpClient, private lobbyService: LobbyService) {
     // Load user from localStorage on service init
     this.loadUserFromStorage();
   }
@@ -42,6 +44,9 @@ export class AuthService {
       tap(response => {
         if (response.success && response.user) {
           this.setCurrentUser(response.user);
+          if (response.lobby) {
+            this.lobbyService.updateLobby(response.lobby);
+          }
         }
       })
     );
@@ -53,6 +58,7 @@ export class AuthService {
   logout(): void {
     this.currentUserSubject.next(null);
     localStorage.removeItem('currentUser');
+    this.lobbyService.clearLobby();
   }
 
   /**

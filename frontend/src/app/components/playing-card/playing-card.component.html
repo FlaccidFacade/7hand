@@ -2,9 +2,10 @@
      [class.dragging]="isDragging"
      [class.face-down]="!faceUp"
      [class.joker]="isJoker"
+     [class.static]="!draggable && !flippable"
      [style.transform]="'rotate(' + rotation + 'deg)'"
      (dblclick)="toggleFace()"
-     title="Double-click to flip, drag to rotate"
+     [attr.title]="flippable ? 'Double-click to flip, drag to rotate' : null"
      [attr.aria-label]="'Playing card: ' + displayRank + ' of ' + suit + (faceUp ? ' face up' : ' face down')"
      role="img">
   

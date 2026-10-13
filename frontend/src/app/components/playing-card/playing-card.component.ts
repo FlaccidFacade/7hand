@@ -22,6 +22,7 @@ export class PlayingCardComponent {
   @Input() rank: Rank = 'A';
   @Input() faceUp: boolean = true;
   @Input() draggable: boolean = true;
+  @Input() flippable: boolean = true;
 
   rotation: number = 0;
   isDragging: boolean = false;
@@ -112,6 +113,7 @@ export class PlayingCardComponent {
   }
 
   toggleFace(): void {
+    if (!this.flippable) return;
     this.faceUp = !this.faceUp;
   }
 

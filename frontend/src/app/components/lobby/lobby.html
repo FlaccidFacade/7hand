@@ -1,105 +1,276 @@
 <div class="lobby-container">
-  
+
     <app-header></app-header>
 
-  <div class="card-table">
+  <div class="cards row">
     <div class="table-surface">
       <!-- Center area with game info -->
       <div class="table-center">
-        <div class="game-status" *ngIf="players.length < 2">
-          Waiting for players...
+        <div class="table-cards" *ngIf="showTableCards">
+          <div class="pile draw-pile" [attr.aria-label]="'Draw pile, ' + drawPileCount + ' cards'">
+            <button
+              type="button"
+              class="card-slot selection-ring"
+              [class.selected]="selectedSource === 'deck'"
+              [disabled]="!canDrawNow"
+              [attr.aria-pressed]="selectedSource === 'deck'"
+              aria-label="Mystery card from the deck"
+              (click)="selectSource('deck')"
+            >
+              <span class="deck-stack">
+                <app-playing-card
+                  *ngFor="let layer of [0, 1, 2]"
+                  class="deck-layer"
+                  [style.transform]="'translate(' + layer * 3 + 'px, ' + layer * -3 + 'px)'"
+                  [faceUp]="false"
+                  [draggable]="false"
+                  [flippable]="false"
+                ></app-playing-card>
+              </span>
+            </button>
+            <span class="pile-label">Deck ({{ drawPileCount }})</span>
+          </div>
+          <div class="pile discard-pile" aria-label="Top card of the discard pile">
+            <div class="discard-stack">
+            <div class="previous-discard" aria-hidden="false" *ngFor="let prev of previousDiscards; let i = index"
+              [style.--offset]="previousDiscards.length - i">
+              <app-playing-card
+                [suit]="suitOf(prev)"
+                [rank]="rankOf(prev)"
+                [draggable]="false"
+                [flippable]="false"
+              ></app-playing-card>
+            </div>
+            <button
+              type="button"
+              class="card-slot selection-ring"
+              [class.selected]="selectedSource === 'discard'"
+              [disabled]="!(canDrawNow || canThrow)"
+              [attr.aria-pressed]="selectedSource === 'discard'"
+              aria-label="Face-up card on the discard pile"
+              (click)="onDiscardPileClick()"
+            >
+              <app-playing-card
+                *ngIf="topDiscard; let card"
+                class="top-card"
+                [suit]="suitOf(card)"
+                [rank]="rankOf(card)"
+                [draggable]="false"
+                [flippable]="false"
+              ></app-playing-card>
+              <span class="empty-pile" *ngIf="!topDiscard"></span>
+            </button>
+            </div>
+            <span class="pile-label">Discard ({{ discardPileCount }})</span>
+          </div>
+          <div class="bid-area">
+          <div class="pile bid-pile" aria-label="Your declared bids">
+            <div class="bid-stack">
+              <app-playing-card
+                *ngFor="let bid of myBidIntents; let layer = index"
+                class="deck-layer"
+                [style.transform]="'translateX(' + (layer - myBidIntents.length + 1) * 18 + '%)'"
+                [suit]="suitOf(bid)"
+                [rank]="rankOf(bid)"
+                [draggable]="false"
+                [flippable]="false"
+                title="Click to remove this bid"
+                (click)="cancelMyBid(bid)"
+              ></app-playing-card>
+              <span class="empty-pile" *ngIf="myBidIntents.length === 0"></span>
+            </div>
+            <span class="pile-label">Bids ({{ myBidIntents.length }}/3)</span>
+          </div>
+          <div class="bid-controls" *ngIf="showTableCards && !hasMetContract">
+            <select [(ngModel)]="bidRank" aria-label="Bid rank">
+              <option *ngFor="let r of bidRanks" [value]="r">{{ r }}</option>
+            </select>
+            <select [(ngModel)]="bidSuit" aria-label="Bid suit">
+              <option *ngFor="let s of bidSuits" [value]="s">{{ s }}</option>
+            </select>
+            <button type="button" (click)="declareMyBid()">Declare bid</button>
+              <span class="pile-label bid-note" *ngIf="myBidIntents.length">Click a bid card to remove it</span>
+            <span class="requirement" *ngIf="bidError">{{ bidError }}</span>
+          </div>
+          </div>
         </div>
-        <div class="game-status" *ngIf="players.length >= 2 && !isHost">
-          Waiting for host to start
+        <div class="bid-prompt" *ngIf="isMyTurn && gameState?.bidOffer">
+          Waiting for the bidder to confirm their bid.
         </div>
+        <div class="turn-hint-background selection-ring" [class.selected]="turnHint.includes('Your turn')">
+        
+        <div class="turn-hint comet "
+         *ngIf="turnHint">{{ turnHint }}</div></div>
+         <button
+          type="button"
+          class="btn-next-hand"
+          *ngIf="canDealNextHand"
+          (click)="dealNextHand()"
+        >
+          Deal hand {{ (gameState?.handNumber ?? 1) + 1 }}
+        </button>
+        <div class="requirement" *ngIf="isHandOver && gameState?.phase === 'handOver' && !canDealNextHand">
+          Waiting for the host to deal the next hand.
+        </div>
+        <button
+          type="button"
+          class="btn-confirm-move"
+          *ngIf="showTableCards && isMyTurn"
+          [disabled]="!canConfirm"
+          (click)="confirmAction()"
+        >
+          {{ confirmLabel }}
+        </button>
         <button 
-          *ngIf="isHost && players.length >= 2" 
+          *ngIf="!isStarted && isHost && players.length >= 2" 
           class="btn-start-game"
           (click)="startGame()"
         >
           Start Game
         </button>
+        <div class="requirement" *ngIf="contractPrompt">{{ contractPrompt }}</div>
+        <section class="hand-choices" *ngIf="showTableCards" aria-label="Your available contracts">
+          <div class="hand-choice-list">
+            <button
+              type="button"
+              class="hand-choice"
+              *ngFor="let option of contractOptions"
+              [class.selected]="option.selected"
+              [disabled]="!canChooseContract || !option.available"
+              [attr.aria-pressed]="option.selected"
+              (click)="chooseContract(option.roundNumber)"
+            >
+              <span>{{ option.label }}</span>
+              <strong>{{ option.status }}</strong>
+            </button>
+          </div>
+        </section>
+        
       </div>
 
-      <!-- Player seats around the table -->
-      <div class="seat seat-top-left" [class.occupied]="isPositionOccupied(0)">
-        <div class="player-spot" *ngIf="getPlayerAtPosition(0); let player">
-          <div class="player-avatar">{{ player.displayName.charAt(0).toUpperCase() }}</div>
-          <div class="player-name">{{ player.displayName }}</div>
-          <div class="host-badge" *ngIf="player.id === players[0]?.id">HOST</div>
-        </div>
-        <div class="empty-spot" *ngIf="!getPlayerAtPosition(0)">
-          <div class="empty-icon">+</div>
-        </div>
-      </div>
-
-      <div class="seat seat-top-center" [class.occupied]="isPositionOccupied(1)">
-        <div class="player-spot" *ngIf="getPlayerAtPosition(1); let player">
-          <div class="player-avatar">{{ player.displayName.charAt(0).toUpperCase() }}</div>
-          <div class="player-name">{{ player.displayName }}</div>
-          <div class="host-badge" *ngIf="player.id === players[0]?.id">HOST</div>
-        </div>
-        <div class="empty-spot" *ngIf="!getPlayerAtPosition(1)">
-          <div class="empty-icon">+</div>
-        </div>
-      </div>
-
-      <div class="seat seat-top-right" [class.occupied]="isPositionOccupied(2)">
-        <div class="player-spot" *ngIf="getPlayerAtPosition(2); let player">
-          <div class="player-avatar">{{ player.displayName.charAt(0).toUpperCase() }}</div>
-          <div class="player-name">{{ player.displayName }}</div>
-          <div class="host-badge" *ngIf="player.id === players[0]?.id">HOST</div>
-        </div>
-        <div class="empty-spot" *ngIf="!getPlayerAtPosition(2)">
-          <div class="empty-icon">+</div>
-        </div>
-      </div>
-
-      <div class="seat seat-bottom-left" [class.occupied]="isPositionOccupied(3)">
-        <div class="player-spot" *ngIf="getPlayerAtPosition(3); let player">
-          <div class="player-avatar">{{ player.displayName.charAt(0).toUpperCase() }}</div>
-          <div class="player-name">{{ player.displayName }}</div>
-          <div class="host-badge" *ngIf="player.id === players[0]?.id">HOST</div>
-        </div>
-        <div class="empty-spot" *ngIf="!getPlayerAtPosition(3)">
-          <div class="empty-icon">+</div>
-        </div>
-      </div>
-
-      <div class="seat seat-bottom-center" [class.occupied]="isPositionOccupied(4)">
-        <div class="player-spot" *ngIf="getPlayerAtPosition(4); let player">
-          <div class="player-avatar">{{ player.displayName.charAt(0).toUpperCase() }}</div>
-          <div class="player-name">{{ player.displayName }}</div>
-          <div class="host-badge" *ngIf="player.id === players[0]?.id">HOST</div>
-        </div>
-        <div class="empty-spot" *ngIf="!getPlayerAtPosition(4)">
-          <div class="empty-icon">+</div>
-        </div>
-      </div>
-
-      <div class="seat seat-bottom-right" [class.occupied]="isPositionOccupied(5)">
-        <div class="player-spot" *ngIf="getPlayerAtPosition(5); let player">
-          <div class="player-avatar">{{ player.displayName.charAt(0).toUpperCase() }}</div>
-          <div class="player-name">{{ player.displayName }}</div>
-          <div class="host-badge" *ngIf="player.id === players[0]?.id">HOST</div>
-        </div>
-        <div class="empty-spot" *ngIf="!getPlayerAtPosition(5)">
-          <div class="empty-icon">+</div>
-        </div>
-      </div>
     </div>
-
-    <!-- Table edge/rim -->
-    <div class="table-edge"></div>
+    <div class="player-hand" *ngIf="showTableCards && myHand.length > 0" aria-label="Your hand">
+      <button
+        type="button"
+        *ngFor="let card of myHand; trackBy: trackCard"
+        class="hand-card card-slot selection-ring"
+        [class.selected]="isSelected(card)"
+        [class.staged]="isStaged(card)"
+        [class.dragging]="card.id === dragCardId"
+        [class.inactive]="!canDiscardNow"
+        [style.transform]="card.id === dragCardId ? 'translate(' + dragDx + 'px, -14px) scale(1.06)' : null"
+        [attr.data-card-id]="card.id"
+        [attr.aria-pressed]="isSelected(card)"
+        [attr.aria-disabled]="!canDiscardNow || isStaged(card)"
+        [attr.aria-label]="card.rank + ' of ' + card.suit"
+        (pointerdown)="onHandPointerDown($event, card)"
+        (click)="selectHandCard(card)"
+      >
+        <div class="flip-card" *ngIf="card.id === flipCardId; else plainCard">
+          <app-playing-card
+            class="flip-front"
+            [suit]="suitOf(card)"
+            [rank]="rankOf(card)"
+            [draggable]="false"
+            [flippable]="false"
+          ></app-playing-card>
+          <app-playing-card
+            class="flip-back"
+            [faceUp]="false"
+            [draggable]="false"
+            [flippable]="false"
+          ></app-playing-card>
+        </div>
+        <ng-template #plainCard>
+          <app-playing-card
+            [suit]="suitOf(card)"
+            [rank]="rankOf(card)"
+            [draggable]="false"
+            [flippable]="false"
+          ></app-playing-card>
+        </ng-template>
+      </button>
+      <div class="hand-actions" *ngIf="showTableCards && canDiscardNow">
+    <div class="staged-melds" *ngIf="stagedMelds.length > 0">
+      <span class="staged-meld" *ngFor="let group of stagedMelds; let i = index">
+        <strong>{{ group.type === 'set' ? 'Set' : 'Run' }}:</strong>
+        <span *ngFor="let id of group.cardIds"> {{ cardText(id) }}</span>
+        <button type="button" class="btn-unstage" [attr.aria-label]="'Remove ' + group.type" (click)="unstageMeld(i)">×</button>
+      </span>
+    </div>
+    <div class="action-buttons">
+      <button type="button" class="btn-stage" [disabled]="!canStageSet" (click)="stageMeld('set')">Stage as set</button>
+      <button type="button" class="btn-stage" [disabled]="!canStageRun" (click)="stageMeld('run')">Stage as run</button>
+      <button type="button" class="btn-lay-down" [disabled]="!canMeld" (click)="meldStagedCards()">
+        {{ hasMetContract ? 'Meld cards' : 'Meld contract' }} {{ stagedMelds.length > 0 ? '(' + stagedMelds.length + ')' : '' }}
+      </button>
+    </div>
+    <div class="action-hint" *ngIf="canLayOff">Select cards, then click a set or run on the table to lay them off</div>
+    <div class="action-error" *ngIf="actionError" role="alert">{{ actionError }}</div>
+  </div>
+    </div>
+    
   </div>
 
-  <div class="lobby-footer">
-    <div class="game-info">
-      <span class="info-label">Share this lobby code with friends:</span>
-      <span class="lobby-code">   <button class="btn-secondary" (click)="copyLobbyLink()">
-        📋 Copy Link
-      </button>{{ lobbyId }}</span>
+  <app-board
+    *ngIf="showTableCards"
+    [spaces]="boardSpaces"
+    [targetable]="canLayOff"
+    (meldSelected)="layOffSelectedCards($event)"
+  ></app-board>
+
+  
+
+ 
+
+  <div class="lobby-footer" style="display: flex; flex-direction: row; gap: 2rem;">
+    <ng-container *ngIf="!isStarted">
+      <div class="lobby-people coming-soon-panel" style="flex: 1; display: flex; flex-direction: column; gap: 0.5rem;">
+        <span class="coming-soon-overlay">Coming Soon</span>
+        <span class="info-label">Share this lobby code with friends:</span>
+        <span class="lobby-code">{{ lobbyId }}<button class="btn-copy-link" (click)="copyLobbyLink()">
+          📋 Copy Link
+        </button></span>
+      </div>
+      <div class="lobby-bots" *ngIf="canStartBotGame" style="flex: 1; display: flex; flex-direction: column; gap: 0.5rem;">
+        <span class="info-label">Play against the computer:</span>
+        <button class="btn-secondary" (click)="startBotGame()">
+          Start Bot Game
+        </button>
+      </div>
+    </ng-container>
+    <div class="lobby-bots" *ngIf="isStarted" style="flex: 1; display: flex; flex-direction: column; gap: 0.5rem;">
+      <span class="info-label">{{ isBotGame ? 'Playing against the computer' : 'Game in progress' }}</span>
+      <span class="info-label">{{ handLabel }}</span>
+      <button type="button" class="btn-secondary" *ngIf="isHost" (click)="closeGame()">Close game</button>
     </div>
   </div>
+  <app-modal [isOpen]="!!pendingBidderName && canDrawNow" title="Bid declared" (close)="$event">
+    <p>{{ pendingBidderName }} has bid on the {{ topDiscardName }}.</p>
+    <app-playing-card *ngIf="topDiscard as card" class="bid-modal-card" [suit]="suitOf(card)" [rank]="rankOf(card)" [draggable]="false" [flippable]="false"></app-playing-card>
+    <div class="bid-prompt">
+      <button type="button" (click)="takeDiscardInstead()">Take it</button>
+      <button type="button" (click)="allowBid()">Allow bid</button>
+    </div>
+  </app-modal>
+  <app-modal [isOpen]="amOfferedBid" title="Confirm your bid" (close)="$event">
+    <p>Your bid on the {{ topDiscardName }} was allowed. Take it and the top deck card?</p>
+    <app-playing-card *ngIf="topDiscard as card" class="bid-modal-card" [suit]="suitOf(card)" [rank]="rankOf(card)" [draggable]="false" [flippable]="false"></app-playing-card>
+    <div class="bid-prompt">
+      <button type="button" (click)="confirmMyBid()">Confirm bid</button>
+      <button type="button" (click)="withdrawMyBid()">Withdraw</button>
+    </div>
+  </app-modal>
+  <app-modal [isOpen]="showGameOver" title="Game over" (close)="showGameOver = false">
+    <ol class="rankings">
+      <li *ngFor="let row of rankings">
+         {{ row.name }} <strong>{{ row.score }}</strong> pts
+      </li>
+    </ol>
+    <p>Lowest score wins.</p>
+    <div class="bid-prompt" *ngIf="isHost">
+      <button type="button" (click)="closeGame()">Close game</button>
+    </div>
+  </app-modal>
+
 </div>
-
