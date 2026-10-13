@@ -2,6 +2,7 @@ const express = require('express');
 const { loadUserByUsernameFromDb, updateUserActivity } = require('../user');
 const { createAndSaveLobby, serializeLobby } = require('../lobby');
 const logger = require('../logger');
+const RateLimit = require('express-rate-limit');
 
 const router = express.Router();
 
@@ -13,11 +14,21 @@ function setUserManager(manager) {
   userManager = manager;
 }
 
+// Rate limiter for login attempts to prevent brute force and DoS
+const loginLimiter = RateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // limit each IP to 10 login requests per windowMs
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false   // Disable the `X-RateLimit-*` headers
+});
+
 function setLobbyManager(manager) {
   lobbyManager = manager;
 }
 
-router.post('/login', async (req, res) => {
+router.post('/login', loginLimiter, async (req, res) => {
+
+
   try {
     const { username, password } = req.body;
     
