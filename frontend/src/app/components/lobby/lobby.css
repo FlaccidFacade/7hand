@@ -219,6 +219,28 @@
     color: rgba(255, 255, 255, 0.9);
 }
 
+.coming-soon-panel {
+    position: relative;
+}
+
+.coming-soon-overlay {
+    position: absolute;
+    top: -0.75rem;
+    left: 50%;
+    transform: translateX(-50%) rotate(-6deg);
+    z-index: 2;
+    padding: 0.35rem 0.9rem;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #ffd166 0%, #ef476f 100%);
+    color: #1a1a1a;
+    font-size: clamp(0.75rem, 1.5vw, 0.95rem);
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    box-shadow: 0 0.5rem 1.25rem rgba(0, 0, 0, 0.25);
+    pointer-events: none;
+}
+
 
 .lobby-code {
     font-size: clamp(1.25rem, 2.5vw, 2rem);
