@@ -1,0 +1,64 @@
+<section class="board" aria-label="The table">
+  <div
+    class="space selection-ring"
+    [class.selected]="!!space.wonHand"
+    *ngFor="let space of spaces; trackBy: trackSpace"
+    [class.mine]="space.isMe"
+    [attr.data-player-id]="space.playerId"
+  >
+    <header class="space-header">
+      <span class="space-title">
+        <span class="space-score" title="Total points this game" aria-label="Total points">{{ space.score ?? 0 }}</span>
+        <span class="space-name">{{ space.name }}</span>
+      </span>
+      <span class="badge" *ngIf="space.contractMelded">Contract melded</span>
+      <span class="contract-summary">
+        <span class="contract-label">{{ space.contractLabel || 'Choosing a contract' }}</span>
+        <span
+          class="hand-card-count"
+          [attr.aria-label]="space.handCardCount + (space.handCardCount === 1 ? ' card in hand' : ' cards in hand')"
+        >{{ space.handCardCount }}</span>
+      </span>
+    </header>
+    
+    
+      <div class="hands-row">
+        <div class="circles available-bids" aria-label="Available bids">
+          @for (bid of bidSlots; track bid) {
+            <span class="circle bid" [class.used]="bid < (space.bidsUsed ?? 0)"></span>
+          }
+        </div>
+        <div class="circles available-contracts" aria-label="Available contracts">
+          @for (entry of space.availableContractRounds! | keyvalue; track entry.key) {
+            <span class="circle" [class.filled]="entry.value">{{ entry.key }}</span>
+          }
+        </div>
+      </div>
+ 
+    <div class="melds">
+      <button
+        type="button"
+        class="meld"
+        *ngFor="let meld of space.melds; trackBy: trackMeld"
+        [class.targetable]="targetable"
+        [attr.data-meld-id]="meld.id"
+        [attr.aria-disabled]="!targetable"
+        [attr.aria-label]="meldLabel(meld)"
+        (click)="onMeldClick(space, meld)"
+      >
+        <span class="meld-label">{{ meldLabel(meld) }}</span>
+        <span class="meld-cards">
+          <span
+            class="meld-card"
+            
+            *ngFor="let card of meld.cards; let i = index"
+            [class.red]="isRed(card)"
+            [class.joker]="isJoker(card)"
+            [attr.title]="cardTitle(meld, i)"
+          >{{ cardText(card) }}</span>
+        </span>
+      </button>
+      <p class="empty" *ngIf="space.melds.length === 0">Nothing played yet</p>
+    </div>
+  </div>
+</section>

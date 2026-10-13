@@ -10,6 +10,9 @@
       <button class="btn-icon" (click)="openRulesModal()" title="Rules">
         📖
       </button>
+      <button class="btn-icon" (click)="openSettingsModal()" title="Settings">
+        ⚙️
+      </button>
       <button class="btn-danger" (click)="logout()">
         Logout
       </button>
@@ -36,3 +39,12 @@
 >
   <app-rules-display></app-rules-display>
 </app-modal>
+<!-- Settings Modal -->
+<app-modal 
+  [isOpen]="showSettingsModal" 
+  [title]="'Settings'" 
+  (close)="closeSettingsModal()"
+>
+  <app-settings-display></app-settings-display>
+</app-modal>
+  

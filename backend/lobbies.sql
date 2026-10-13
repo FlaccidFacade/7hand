@@ -1,6 +1,7 @@
 -- SQL for lobbies table
 CREATE TABLE IF NOT EXISTS lobbies (
   id UUID PRIMARY KEY,
+  code VARCHAR(6) UNIQUE,
   users JSONB NOT NULL,
   gamestate JSONB,
   created_at TIMESTAMP NOT NULL DEFAULT NOW(),

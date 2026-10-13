@@ -6,11 +6,12 @@ import { User } from '../../services/user.service';
 import { Modal } from '../modal/modal';
 import { RulesDisplay } from '../rules-display/rules-display';
 import { UserProfile } from '../user-profile/user-profile';
+import { SettingsDisplay } from '../settings-display/settings-display';
 
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [ CommonModule, UserProfile, RulesDisplay, Modal],
+  imports: [ CommonModule, UserProfile, RulesDisplay, Modal, SettingsDisplay],
   templateUrl: './header.component.html',
   styleUrls: ['./header.component.css']
 })
@@ -18,6 +19,7 @@ export class HeaderComponent {
   userCoins = 0;
   showProfileModal = false;
   showRulesModal = false;
+  showSettingsModal = false;
 
   currentUserId: string | null = null;
   currentUser: User | null = null;
@@ -51,8 +53,16 @@ export class HeaderComponent {
     this.showRulesModal = true;
   }
 
+  openSettingsModal(): void {
+    this.showSettingsModal = true;
+  }
+
   closeRulesModal(): void {
     this.showRulesModal = false;
+  }
+  
+  closeSettingsModal(): void {
+    this.showSettingsModal = false;
   }
 
   logout(): void {

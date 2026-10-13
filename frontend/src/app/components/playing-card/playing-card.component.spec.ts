@@ -131,6 +131,15 @@ describe('PlayingCardComponent', () => {
     });
   });
 
+  describe('Non-flippable card', () => {
+    it('should stay face down when toggled', () => {
+      component.faceUp = false;
+      component.flippable = false;
+      component.toggleFace();
+      expect(component.faceUp).toBe(false);
+    });
+  });
+
   describe('Rotation', () => {
     it('should start with zero rotation', () => {
       expect(component.rotation).toBe(0);
