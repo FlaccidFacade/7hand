@@ -1,5 +1,7 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, HostListener, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Modal } from '../modal/modal';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { User } from '../../services/user.service';
 import { HeaderComponent } from '../header/header.component';
@@ -14,6 +16,12 @@ import {
   canDraw,
   discardCard,
   drawCard,
+  acceptBid,
+  offerBid,
+  withdrawBid,
+  cancelBid,
+  declareBid,
+  pendingBidder,
   isHandOver,
   playBotStep,
   playMelds,
@@ -25,7 +33,7 @@ import { BoardComponent, BoardSpace, MeldTarget } from '../board/board.component
 import { WebRTCService } from '../../services/webrtc.service';
 import { SignalingService } from '../../services/signaling.service';
 import { Subscription, firstValueFrom, of } from 'rxjs';
-import { map, switchMap } from 'rxjs/operators';
+import { catchError, map, switchMap } from 'rxjs/operators';
 
 interface Player {
   id: string;
@@ -53,7 +61,7 @@ const DRAW_ANIMATION_MS = 650;
   standalone: true,
   // State is held in plain fields and changed from subscriptions and timers, so the view must be checked eagerly
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [CommonModule, HeaderComponent, PlayingCardComponent, BoardComponent],
+  imports: [CommonModule, FormsModule, Modal, HeaderComponent, PlayingCardComponent, BoardComponent],
   templateUrl: './lobby.html',
   styleUrls: ['./lobby.css']
 })
@@ -84,6 +92,10 @@ export class Lobby implements OnInit, OnDestroy {
 
   private subscriptions: Subscription[] = [];
   private autoSaveTimer: ReturnType<typeof setInterval> | null = null;
+  static readonly GAME_OVER_DELAY_MS = 30000;
+  showGameOver = false;
+  private gameOverShown = false;
+  private gameOverTimer: ReturnType<typeof setTimeout> | null = null;
   private botTimer: ReturnType<typeof setTimeout> | null = null;
   private destroyed = false;
 
@@ -272,6 +284,122 @@ export class Lobby implements OnInit, OnDestroy {
     return !!this.gameState && this.gameState.currentTurn === this.currentUserId;
   }
 
+  bidSuits = ['hearts', 'diamonds', 'clubs', 'spades', 'joker'];
+  bidRanks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'JOKER'];
+  bidSuit = 'hearts';
+  bidRank = 'A';
+  bidError: string | null = null;
+
+  get myBidIntents(): Card[] {
+    return (this.currentUserId && this.gameState?.bidIntents?.[this.currentUserId]) || [];
+  }
+
+  // Shown to the current player when the face-up card matches another player's declared bid
+  get pendingBidderName(): string | null {
+    const id = this.isMyTurn ? pendingBidder(this.gameState) : null;
+    return id ? this.players.find(p => p.id === id)?.displayName ?? 'Another player' : null;
+  }
+
+  declareMyBid(): void {
+    if (!this.gameState || !this.currentUserId) {
+      return;
+    }
+    try {
+      const joker = this.bidSuit === 'joker' || this.bidRank === 'JOKER';
+      this.applyGameState(declareBid(this.gameState, this.currentUserId,
+        joker ? 'joker' : this.bidSuit, joker ? 'JOKER' : this.bidRank));
+      this.bidError = null;
+    } catch (error) {
+      this.bidError = error instanceof Error ? error.message : 'Unable to declare bid';
+    }
+  }
+
+  cancelMyBid(bid: Card): void {
+    if (this.gameState && this.currentUserId) {
+      this.applyGameState(cancelBid(this.gameState, this.currentUserId, bid.id));
+    }
+  }
+
+  allowBid(): void {
+    if (this.gameState && this.pendingBidderName) {
+      this.applyGameState(offerBid(this.gameState));
+    }
+  }
+
+  get gameEnded(): boolean {
+    const state = this.gameState;
+    return !!state && (state.phase === 'gameOver' ||
+      (state.phase === 'handOver' && (state.handNumber ?? 1) >= (state.totalHands ?? 7)));
+  }
+
+  // Lowest total penalty points ranks first; tied players share a rank
+  get rankings(): { rank: number; name: string; score: number }[] {
+    const state = this.gameState;
+    const order = state?.turnOrder ?? [];
+    const rows = order.map(id => ({
+      name: this.players.find(p => p.id === id)?.displayName ?? 'Player',
+      score: state?.scores?.[id] ?? 0
+    })).sort((a, b) => a.score - b.score);
+    return rows.map((row, i) => ({
+      ...row,
+      rank: i > 0 && rows[i - 1].score === row.score ? 0 : i + 1
+    })).map((row, i, all) => ({ ...row, rank: row.rank || all[i - 1].rank }));
+  }
+
+  private scheduleGameOver(): void {
+    if (!this.gameEnded) {
+      this.clearGameOverTimer();
+      this.showGameOver = false;
+      this.gameOverShown = false;
+      return;
+    }
+    if (this.gameOverTimer || this.gameOverShown) {
+      return;
+    }
+    this.gameOverTimer = setTimeout(() => {
+      this.gameOverTimer = null;
+      this.showGameOver = true;
+      this.gameOverShown = true;
+      this.cdr.markForCheck();
+    }, Lobby.GAME_OVER_DELAY_MS);
+  }
+
+  private clearGameOverTimer(): void {
+    if (this.gameOverTimer) {
+      clearTimeout(this.gameOverTimer);
+      this.gameOverTimer = null;
+    }
+  }
+
+  get topDiscardName(): string {
+    const card = this.topDiscard;
+    if (!card) {
+      return 'card';
+    }
+    return card.suit === 'joker' ? 'Joker' : `${card.rank} of ${card.suit}`;
+  }
+
+  get amOfferedBid(): boolean {
+    return !!this.currentUserId && this.gameState?.bidOffer?.bidderId === this.currentUserId;
+  }
+
+  confirmMyBid(): void {
+    if (this.gameState && this.amOfferedBid) {
+      this.applyGameState(acceptBid(this.gameState));
+    }
+  }
+
+  withdrawMyBid(): void {
+    if (this.gameState && this.currentUserId && this.amOfferedBid) {
+      this.applyGameState(withdrawBid(this.gameState, this.currentUserId));
+    }
+  }
+
+  takeDiscardInstead(): void {
+    this.selectedSource = 'discard';
+    this.confirmAction();
+  }
+
   get canDrawNow(): boolean {
     return canDraw(this.gameState, this.currentUserId);
   }
@@ -331,7 +459,7 @@ export class Lobby implements OnInit, OnDestroy {
               : 'Available';
       return {
         roundNumber,
-        label: `Round ${roundNumber}: ${describeContract(contractForRound(roundNumber))} (${contractDifficulty(roundNumber)} cards)`,
+        label: `Contract ${roundNumber}: ${describeContract(contractForRound(roundNumber))} (${contractDifficulty(roundNumber)} cards)`,
         status,
         available,
         selected
@@ -360,8 +488,8 @@ export class Lobby implements OnInit, OnDestroy {
     }
     const roundNumber = this.currentUserId ? this.gameState?.selectedContracts?.[this.currentUserId] : null;
     return roundNumber
-      ? `Round ${roundNumber}: meld exactly ${describeContract(contractForRound(roundNumber))} to meet the contract`
-      : 'Choose one available contract to meld this round';
+      ? `Contract ${roundNumber}: meld exactly ${describeContract(contractForRound(roundNumber))} to meet the contract`
+      : 'Choose one available contract to meld this hand';
   }
 
   get canConfirm(): boolean {
@@ -754,6 +882,7 @@ export class Lobby implements OnInit, OnDestroy {
       this.refreshBoard();
       this.syncSelection();
       this.scheduleBotMove();
+      this.scheduleGameOver();
     });
 
     this.subscriptions.push(peerJoinedSub, peerLeftSub, dataChannelSub, lobbySub, gameStateSub);
@@ -785,6 +914,11 @@ export class Lobby implements OnInit, OnDestroy {
         if (message.data) {
           this.lobbyService.updateGameState(message.data);
         }
+        break;
+      case 'gameClosed':
+        // The host closed the game; this lobby no longer exists
+        this.cleanup();
+        this.router.navigate(['/']);
         break;
       case 'playerAction':
         // Handle player action
@@ -828,6 +962,7 @@ export class Lobby implements OnInit, OnDestroy {
     this.saveGameState();
     this.stopAutoSave();
     this.clearBotTimer();
+    this.clearGameOverTimer();
 
     // Unsubscribe from all subscriptions
     this.subscriptions.forEach(sub => sub.unsubscribe());
@@ -922,6 +1057,45 @@ export class Lobby implements OnInit, OnDestroy {
       console.error('Failed to copy lobby link:', error);
     });
 
+  }
+
+  // Host closes the game: the old lobby is removed and a fresh lobby with a new code is opened
+  closeGame(): void {
+    if (!this.currentUserId || !this.isHost || !this.lobbyId) {
+      return;
+    }
+    const userId = this.currentUserId;
+    const oldLobbyId = this.lobbyId;
+    if (!this.gameState?.botGame) {
+      this.webrtcService.broadcast('gameClosed', { timestamp: Date.now() });
+    }
+    this.showGameOver = false;
+    this.gameOverShown = false;
+    this.clearGameOverTimer();
+    this.clearBotTimer();
+    this.stopAutoSave();
+    this.closeP2PConnections();
+    this.botGameError = null;
+    this.lobbyService.clearLobby();
+    this.selectedSource = null;
+    this.selectedCardIds = [];
+    this.stagedMelds = [];
+
+    this.lobbyService.deleteLobby(oldLobbyId).pipe(
+      catchError(() => of(null)),
+      switchMap(() => this.lobbyService.createLobby(userId))
+    ).subscribe({
+      next: (lobby) => {
+        this.lobbyId = lobby.lobbyId;
+        this.router.navigate(['/lobby', lobby.lobbyId], { replaceUrl: true });
+        this.setupP2PConnections();
+        this.cdr.markForCheck();
+      },
+      error: (error) => {
+        console.error('Error closing game:', error);
+        this.botGameError = 'Unable to start a new lobby';
+      }
+    });
   }
 
   startBotGame(): void {

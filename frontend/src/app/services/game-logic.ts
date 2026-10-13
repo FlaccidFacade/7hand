@@ -35,6 +35,108 @@ export function useBid(state: GameState, playerId: string): GameState {
   return { ...state, bidsUsed: { ...state.bidsUsed, [playerId]: used + 1 } };
 }
 
+const sameFace = (a: Card, b: Card) => a.suit === b.suit && a.rank === b.rank;
+
+/** Declares intent to bid on a card face; each player may hold 3 declared bids at once. */
+export function declareBid(state: GameState, playerId: string, suit: string, rank: string): GameState {
+  const intents = state.bidIntents?.[playerId] ?? [];
+  if (hasMetContract(state, playerId)) {
+    throw new Error('You cannot bid after melding your contract');
+  }
+  if (state.phase !== 'playing') {
+    throw new Error('Bids can only be declared during a hand');
+  }
+  if (intents.length >= BIDS_PER_HAND) {
+    throw new Error('No bids available');
+  }
+  const card: Card = { id: `bid-${playerId}-${intents.length}-${suit}-${rank}-${Date.now()}`, suit, rank };
+  return { ...state, bidIntents: { ...state.bidIntents, [playerId]: [...intents, card] } };
+}
+
+export function cancelBid(state: GameState, playerId: string, bidId: string): GameState {
+  const intents = state.bidIntents?.[playerId] ?? [];
+  return { ...state, bidIntents: { ...state.bidIntents, [playerId]: intents.filter(c => c.id !== bidId) } };
+}
+
+/** The next player (in turn order after the current one) whose declared bid matches the top discard. */
+export function pendingBidder(state: GameState | null): string | null {
+  if (!state || state.phase !== 'playing' || state.turnPhase !== 'draw') {
+    return null;
+  }
+  const top = state.discardPile?.[state.discardPile.length - 1];
+  const order = state.turnOrder ?? [];
+  if (!top || !state.currentTurn) {
+    return null;
+  }
+  const start = order.indexOf(state.currentTurn);
+  for (let i = 1; i < order.length; i++) {
+    const id = order[(start + i) % order.length];
+    const intents = state.bidIntents?.[id] ?? [];
+    if (!hasMetContract(state, id) && (state.bidsUsed?.[id] ?? 0) < BIDS_PER_HAND && intents.some(c => sameFace(c, top))) {
+      return id;
+    }
+  }
+  return null;
+}
+
+/** The current player allows the pending bid; the bidder must still confirm or withdraw it. */
+export function offerBid(state: GameState): GameState {
+  const bidder = pendingBidder(state);
+  if (!bidder || state.bidOffer) {
+    throw new Error('No bid to offer');
+  }
+  return { ...state, bidOffer: { bidderId: bidder } };
+}
+
+/** The bidder changes their mind: the matching declared bid is dropped and the current player carries on. */
+export function withdrawBid(state: GameState, playerId: string): GameState {
+  if (state.bidOffer?.bidderId !== playerId) {
+    throw new Error('No bid offer for this player');
+  }
+  const top = state.discardPile?.[state.discardPile.length - 1];
+  const intents = [...(state.bidIntents?.[playerId] ?? [])];
+  const matched = top ? intents.findIndex(c => sameFace(c, top)) : -1;
+  if (matched >= 0) {
+    intents.splice(matched, 1);
+  }
+  return { ...state, bidOffer: undefined, bidIntents: { ...state.bidIntents, [playerId]: intents } };
+}
+
+/**
+ * The bidder confirms the offered bid: the bidder takes the top discard and the top deck card,
+ * spends one bid, and the newly revealed discard may trigger another bid.
+ */
+export function acceptBid(state: GameState): GameState {
+  const bidder = pendingBidder(state);
+  if (!bidder || state.bidOffer?.bidderId !== bidder) {
+    throw new Error('No bid to accept');
+  }
+  let drawPile = [...(state.drawPile ?? [])];
+  const discardPile = [...(state.discardPile ?? [])];
+  const faceUp = discardPile.pop() as Card;
+  if (drawPile.length === 0 && discardPile.length > 1) {
+    const top = discardPile.pop() as Card;
+    drawPile = shuffle(discardPile.splice(0));
+    discardPile.push(top);
+  }
+  const mystery = drawPile.shift();
+  const intents = [...(state.bidIntents?.[bidder] ?? [])];
+  const matched = intents.findIndex(c => sameFace(c, faceUp));
+  if (matched >= 0) {
+    intents.splice(matched, 1);
+  }
+  const gained = mystery ? [faceUp, mystery] : [faceUp];
+  return {
+    ...state,
+    drawPile,
+    discardPile,
+    hands: { ...state.hands, [bidder]: [...(state.hands?.[bidder] ?? []), ...gained] },
+    bidsUsed: { ...state.bidsUsed, [bidder]: (state.bidsUsed?.[bidder] ?? 0) + 1 },
+    bidIntents: { ...state.bidIntents, [bidder]: intents },
+    bidOffer: undefined
+  };
+}
+
 /** Penalty points a card costs when left in hand: Joker 15, Ace 11, J-K 10, others face value. */
 export function cardPoints(card: Card): number {
   if (isJoker(card)) {
@@ -71,7 +173,7 @@ export function isPlayersTurn(state: GameState | null, playerId: string | null):
 }
 
 export function canDraw(state: GameState | null, playerId: string | null): boolean {
-  return isPlayersTurn(state, playerId) && state?.turnPhase === 'draw';
+  return isPlayersTurn(state, playerId) && state?.turnPhase === 'draw' && !state?.bidOffer;
 }
 
 export function canDiscard(state: GameState | null, playerId: string | null): boolean {
@@ -159,6 +261,7 @@ export function startNextHand(state: GameState): GameState {
     contractMelded: Object.fromEntries(turnOrder.map(playerId => [playerId, false])),
     selectedContracts: Object.fromEntries(turnOrder.map(playerId => [playerId, null])),
     bidsUsed: Object.fromEntries(turnOrder.map(playerId => [playerId, 0])),
+    bidIntents: Object.fromEntries(turnOrder.map(playerId => [playerId, []])),
     winnerId: undefined
   };
 }
@@ -292,7 +395,7 @@ export function playMelds(state: GameState, playerId: string, groups: MeldGroup[
     const sets = melds.filter(m => m.type === 'set').length;
     const runs = melds.filter(m => m.type === 'run').length;
     if (sets !== requirement.sets || runs !== requirement.runs) {
-      throw new Error(`Round ${roundNumber} requires exactly ${describeContract(requirement)} to meld the contract`);
+      throw new Error(`Contract ${roundNumber} requires exactly ${describeContract(requirement)} to meld the contract`);
     }
   }
 
@@ -497,6 +600,9 @@ function botPlayCards(state: GameState, botId: string): GameState | null {
 /** Plays the next step (draw, meld/lay off, or discard) for a computer player. */
 export function playBotStep(state: GameState, botId: string): GameState {
   if (canDraw(state, botId)) {
+    if (pendingBidder(state) && !state.bidOffer && chooseBotSource(state, botId) !== 'discard') {
+      return offerBid(state);
+    }
     return drawCard(state, botId, chooseBotSource(state, botId));
   }
   return botPlayCards(state, botId) ?? discardCard(state, botId, chooseBotDiscard(state, botId).id);

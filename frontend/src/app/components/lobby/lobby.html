@@ -1,5 +1,5 @@
 <div class="lobby-container">
-  
+
     <app-header></app-header>
 
   <div class="cards row">
@@ -63,6 +63,39 @@
             </div>
             <span class="pile-label">Discard ({{ discardPileCount }})</span>
           </div>
+          <div class="bid-area">
+          <div class="pile bid-pile" aria-label="Your declared bids">
+            <div class="bid-stack">
+              <app-playing-card
+                *ngFor="let bid of myBidIntents; let layer = index"
+                class="deck-layer"
+                [style.transform]="'translateX(' + (layer - myBidIntents.length + 1) * 18 + '%)'"
+                [suit]="suitOf(bid)"
+                [rank]="rankOf(bid)"
+                [draggable]="false"
+                [flippable]="false"
+                title="Click to remove this bid"
+                (click)="cancelMyBid(bid)"
+              ></app-playing-card>
+              <span class="empty-pile" *ngIf="myBidIntents.length === 0"></span>
+            </div>
+            <span class="pile-label">Bids ({{ myBidIntents.length }}/3)</span>
+          </div>
+          <div class="bid-controls" *ngIf="showTableCards && !hasMetContract">
+            <select [(ngModel)]="bidRank" aria-label="Bid rank">
+              <option *ngFor="let r of bidRanks" [value]="r">{{ r }}</option>
+            </select>
+            <select [(ngModel)]="bidSuit" aria-label="Bid suit">
+              <option *ngFor="let s of bidSuits" [value]="s">{{ s }}</option>
+            </select>
+            <button type="button" (click)="declareMyBid()">Declare bid</button>
+              <span class="pile-label bid-note" *ngIf="myBidIntents.length">Click a bid card to remove it</span>
+            <span class="requirement" *ngIf="bidError">{{ bidError }}</span>
+          </div>
+          </div>
+        </div>
+        <div class="bid-prompt" *ngIf="isMyTurn && gameState?.bidOffer">
+          Waiting for the bidder to confirm their bid.
         </div>
         <div class="turn-hint-background selection-ring" [class.selected]="turnHint.includes('Your turn')">
         
@@ -208,6 +241,35 @@
     <div class="lobby-bots" *ngIf="isStarted" style="flex: 1; display: flex; flex-direction: column; gap: 0.5rem;">
       <span class="info-label">{{ isBotGame ? 'Playing against the computer' : 'Game in progress' }}</span>
       <span class="info-label">{{ handLabel }}</span>
+      <button type="button" class="btn-secondary" *ngIf="isHost" (click)="closeGame()">Close game</button>
     </div>
   </div>
+  <app-modal [isOpen]="!!pendingBidderName && canDrawNow" title="Bid declared" (close)="$event">
+    <p>{{ pendingBidderName }} has bid on the {{ topDiscardName }}.</p>
+    <app-playing-card *ngIf="topDiscard as card" class="bid-modal-card" [suit]="suitOf(card)" [rank]="rankOf(card)" [draggable]="false" [flippable]="false"></app-playing-card>
+    <div class="bid-prompt">
+      <button type="button" (click)="takeDiscardInstead()">Take it</button>
+      <button type="button" (click)="allowBid()">Allow bid</button>
+    </div>
+  </app-modal>
+  <app-modal [isOpen]="amOfferedBid" title="Confirm your bid" (close)="$event">
+    <p>Your bid on the {{ topDiscardName }} was allowed. Take it and the top deck card?</p>
+    <app-playing-card *ngIf="topDiscard as card" class="bid-modal-card" [suit]="suitOf(card)" [rank]="rankOf(card)" [draggable]="false" [flippable]="false"></app-playing-card>
+    <div class="bid-prompt">
+      <button type="button" (click)="confirmMyBid()">Confirm bid</button>
+      <button type="button" (click)="withdrawMyBid()">Withdraw</button>
+    </div>
+  </app-modal>
+  <app-modal [isOpen]="showGameOver" title="Game over" (close)="showGameOver = false">
+    <ol class="rankings">
+      <li *ngFor="let row of rankings">
+         {{ row.name }} <strong>{{ row.score }}</strong> pts
+      </li>
+    </ol>
+    <p>Lowest score wins.</p>
+    <div class="bid-prompt" *ngIf="isHost">
+      <button type="button" (click)="closeGame()">Close game</button>
+    </div>
+  </app-modal>
+
 </div>

@@ -11,6 +11,11 @@ import {
   playBotStep,
   playMelds,
   useBid,
+  acceptBid,
+  offerBid,
+  withdrawBid,
+  declareBid,
+  pendingBidder,
   selectContract,
   startNextHand
 } from './game-logic';
@@ -146,7 +151,7 @@ describe('game-logic', () => {
     const sevens = [card('7h', 'hearts', '7'), card('7s', 'spades', '7'), card('7d', 'diamonds', '7')];
     const nines = [card('9h', 'hearts', '9'), card('9s', 'spades', '9'), card('9c', 'clubs', '9')];
 
-    // Round 1 requires two sets of three.
+    // Contract 1 requires two sets of three.
     function playState(overrides: Partial<GameState> = {}): GameState {
       return makeState({
         handNumber: 1,
@@ -191,7 +196,7 @@ describe('game-logic', () => {
       });
 
       it('should reject a first play that does not meet the hand requirement', () => {
-        expect(() => playMelds(playState(), 'me', [twoKindSets[0]])).toThrowError(/Round 1 requires exactly 2 sets to meld the contract/);
+        expect(() => playMelds(playState(), 'me', [twoKindSets[0]])).toThrowError(/Contract 1 requires exactly 2 sets to meld the contract/);
       });
 
       it('should reject laying down more meld groups than the selected hand requires', () => {
@@ -497,5 +502,58 @@ describe('bids', () => {
     }
     expect(state.bidsUsed?.['me']).toBe(3);
     expect(() => useBid(state, 'me')).toThrow();
+  });
+});
+
+describe('bid intents', () => {
+  it('should limit declared bids to three', () => {
+    let state = makeState();
+    ['2', '3', '4'].forEach(r => (state = declareBid(state, 'bot-1', 'hearts', r)));
+    expect(() => declareBid(state, 'bot-1', 'hearts', '5')).toThrow();
+  });
+
+  it('should give the bidder the face-up card and top mystery card, then chain bids', () => {
+    let state = makeState({ discardPile: [card('x0', 'clubs', '2'), card('x1', 'hearts', '3'), card('x2', 'diamonds', 'Q')] });
+    state = declareBid(state, 'bot-1', 'diamonds', 'Q');
+    state = declareBid(state, 'bot-1', 'hearts', '3');
+    expect(pendingBidder(state)).toBe('bot-1');
+    expect(() => acceptBid(state)).toThrow();
+    state = acceptBid(offerBid(state));
+    expect(state.hands?.['bot-1'].map(c => c.id).slice(-2)).toEqual(['x2', 'd1']);
+    expect(state.bidsUsed?.['bot-1']).toBe(1);
+    expect(pendingBidder(state)).toBe('bot-1');
+    state = acceptBid(offerBid(state));
+    expect(state.bidsUsed?.['bot-1']).toBe(2);
+    expect(state.bidIntents?.['bot-1']).toEqual([]);
+    expect(pendingBidder(state)).toBeNull();
+  });
+
+  it('should let the bidder withdraw an offered bid without any transfer', () => {
+    let state = declareBid(makeState(), 'bot-1', 'diamonds', 'Q');
+    state = offerBid(state);
+    expect(canDraw(state, 'me')).toBeFalse();
+    state = withdrawBid(state, 'bot-1');
+    expect(state.bidsUsed?.['bot-1'] ?? 0).toBe(0);
+    expect(state.hands?.['bot-1'].length).toBe(4);
+    expect(state.bidIntents?.['bot-1']).toEqual([]);
+    expect(canDraw(state, 'me')).toBeTrue();
+  });
+
+  it('should allow three declared bids even after bids were used', () => {
+    let state = useBid(makeState(), 'me');
+    ['2', '3', '4'].forEach(r => (state = declareBid(state, 'me', 'hearts', r)));
+    expect(state.bidIntents?.['me'].length).toBe(3);
+  });
+
+  it('should not let a player with a melded contract bid', () => {
+    const state = makeState({ contractMelded: { me: false, 'bot-1': true } });
+    expect(() => declareBid(state, 'bot-1', 'diamonds', 'Q')).toThrow();
+    const declared = { ...declareBid(makeState(), 'bot-1', 'diamonds', 'Q'), contractMelded: { me: false, 'bot-1': true } };
+    expect(pendingBidder(declared)).toBeNull();
+  });
+
+  it('should not let the current player bid against themselves', () => {
+    const state = declareBid(makeState(), 'me', 'diamonds', 'Q');
+    expect(pendingBidder(state)).toBeNull();
   });
 });

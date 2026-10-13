@@ -55,6 +55,10 @@ export interface GameState {
   removedContracts?: Record<string, number[]>;
   // Bids spent by each player this hand; replenished on every deal
   bidsUsed?: Record<string, number>;
+  // Up to 3 declared bid cards (suit and rank only) per player
+  // Set when the current player allows a bid, until the bidder confirms or withdraws
+  bidOffer?: { bidderId: string };
+  bidIntents?: Record<string, Card[]>;
   winnerId?: string;
   startedAt?: string;
 }

@@ -343,7 +343,7 @@
     flex-direction: row;
     align-items: flex-start;
     justify-content: center;
-    gap: 6vw;
+    gap: 1.5rem;
 }
 
 .pile {
@@ -355,7 +355,13 @@
 
 .discard-stack {
     position: relative;
-    margin-left: 36px;
+    margin-left: 2.25rem;
+}
+
+.bid-stack {
+    position: relative;
+    display: grid;
+    margin-left: 2.25rem;
 }
 
 .previous-discard {
@@ -639,4 +645,32 @@
 
 .hand-card.staged {
     opacity: 0.45;
+}
+
+.bid-controls, .bid-prompt {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+    justify-content: center;
+    margin: 0.5rem 0;
+}
+
+.bid-area {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.bid-area .bid-controls {
+    flex-direction: column;
+    align-items: flex-start;
+    margin: 0;
+    max-width: 7rem;
+}
+
+.bid-note {
+    opacity: 0.75;
+    font-style: italic;
 }

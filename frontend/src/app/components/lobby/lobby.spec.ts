@@ -582,7 +582,7 @@ describe('Lobby', () => {
       });
 
       it('should say what the player must meld for the contract', () => {
-        expect(el().querySelector('.requirement')?.textContent).toContain('Round 1: meld exactly two sets to meet the contract');
+        expect(el().querySelector('.requirement')?.textContent).toContain('Contract 1: meld exactly two sets to meet the contract');
         expect(el().querySelectorAll('.hand-choice').length).toBe(7);
         expect(el().querySelector('.hand-choice.selected')?.textContent).toContain('two sets');
       });
@@ -636,7 +636,7 @@ describe('Lobby', () => {
         stage('set');
         press(el().querySelector('.btn-lay-down'));
 
-        expect(el().querySelector('.action-error')?.textContent).toContain('Round 1 requires exactly two sets to meld the contract');
+        expect(el().querySelector('.action-error')?.textContent).toContain('Contract 1 requires exactly two sets to meld the contract');
         expect(meldsOf('host').length).toBe(0);
       });
 
