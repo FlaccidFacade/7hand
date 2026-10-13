@@ -21,7 +21,7 @@ services:
       - backend
     networks:
       - app-network
-
+    restart: unless-stopped
   frontend-dev:
     build:
       context: ./frontend
