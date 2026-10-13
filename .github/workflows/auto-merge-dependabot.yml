@@ -4,29 +4,97 @@ permissions:
   pull-requests: write
 
 on:
-  pull_request:
+  pull_request_target:
     types:
+      - opened
+      - reopened
+      - synchronize
       - labeled
+      - ready_for_review
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
 
 jobs:
   auto-merge:
-    if: github.actor == 'dependabot[bot]'
     runs-on: ubuntu-22.04
 
     steps:
-      - name: Enable GitHub Auto-Merge
+      - name: Merge Dependabot PRs into staging
         uses: actions/github-script@v9
         with:
-          # GitHub automatically provides the GITHUB_TOKEN secret to every
-          # workflow run. It is available by default and is used for
-          # authentication with the GitHub API (for actions like merging
-          # PRs, pushing code, etc.). You can reference it as 
-          # secrets.GITHUB_TOKEN  in your workflows without any manual setup.
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            github.rest.pulls.merge({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: context.payload.pull_request.number,
-              merge_method: "squash"
+            const { owner, repo } = context.repo;
+            const { data: repository } = await github.rest.repos.get({ owner, repo });
+            const stagingRef = "heads/staging";
+
+            try {
+              await github.rest.git.getRef({ owner, repo, ref: stagingRef });
+            } catch (error) {
+              if (error.status !== 404) throw error;
+
+              const { data: defaultRef } = await github.rest.git.getRef({
+                owner,
+                repo,
+                ref: `heads/${repository.default_branch}`
+              });
+
+              try {
+                await github.rest.git.createRef({
+                  owner,
+                  repo,
+                  ref: "refs/heads/staging",
+                  sha: defaultRef.object.sha
+                });
+              } catch (createError) {
+                if (createError.status !== 422) throw createError;
+                await github.rest.git.getRef({ owner, repo, ref: stagingRef });
+              }
+
+            }
+
+            const pullRequests = await github.paginate(github.rest.pulls.list, {
+              owner,
+              repo,
+              state: "open",
+              per_page: 100
             });
+
+            for (const pullRequest of pullRequests) {
+              if (pullRequest.user?.login !== "dependabot[bot]" || pullRequest.draft) {
+                continue;
+              }
+
+              try {
+                if (pullRequest.base.ref !== "staging") {
+                  await github.rest.pulls.update({
+                    owner,
+                    repo,
+                    pull_number: pullRequest.number,
+                    base: "staging"
+                  });
+                }
+
+                const { data: currentPullRequest } = await github.rest.pulls.get({
+                  owner,
+                  repo,
+                  pull_number: pullRequest.number
+                });
+
+                if (currentPullRequest.base.ref !== "staging") {
+                  throw new Error("Dependabot pull request was not retargeted to staging.");
+                }
+
+                await github.rest.pulls.merge({
+                  owner,
+                  repo,
+                  pull_number: pullRequest.number,
+                  merge_method: "squash"
+                });
+              } catch (error) {
+                console.log(
+                  `Could not merge Dependabot PR #${pullRequest.number} into staging: ${error.message}`
+                );
+              }
+            }
