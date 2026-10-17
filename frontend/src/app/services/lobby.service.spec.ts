@@ -77,9 +77,15 @@ describe('LobbyService', () => {
     req.flush(mockLobby);
   });
 
-  it('should leave lobby', () => {
+  it('should leave lobby and forget the lobby and its game', () => {
     const lobbyId = 'test-lobby-123';
     const userId = 'test-user';
+    const gamestate: GameState = { phase: 'playing' };
+    service.updateLobby({ lobbyId, users: [], started: true, gamestate });
+    const lobbyEmissions: (Lobby | null)[] = [];
+    const stateEmissions: (GameState | null)[] = [];
+    service.getCurrentLobby().subscribe(l => lobbyEmissions.push(l));
+    service.getGameState().subscribe(s => stateEmissions.push(s));
 
     service.leaveLobby(lobbyId, userId).subscribe(response => {
       expect(response.success).toBe(true);
@@ -89,10 +95,19 @@ describe('LobbyService', () => {
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual({ userId });
     req.flush({ success: true });
+
+    expect(lobbyEmissions[lobbyEmissions.length - 1]).toBeNull();
+    expect(stateEmissions[stateEmissions.length - 1]).toBeNull();
   });
 
-  it('should delete lobby', () => {
+  it('should delete lobby and forget the lobby and its game', () => {
     const lobbyId = 'test-lobby-123';
+    const gamestate: GameState = { phase: 'playing' };
+    service.updateLobby({ lobbyId, users: [], started: true, gamestate });
+    const lobbyEmissions: (Lobby | null)[] = [];
+    const stateEmissions: (GameState | null)[] = [];
+    service.getCurrentLobby().subscribe(l => lobbyEmissions.push(l));
+    service.getGameState().subscribe(s => stateEmissions.push(s));
 
     service.deleteLobby(lobbyId).subscribe(response => {
       expect(response.success).toBe(true);
@@ -101,6 +116,9 @@ describe('LobbyService', () => {
     const req = httpMock.expectOne(`/api/lobby/${lobbyId}`);
     expect(req.request.method).toBe('DELETE');
     req.flush({ success: true });
+
+    expect(lobbyEmissions[lobbyEmissions.length - 1]).toBeNull();
+    expect(stateEmissions[stateEmissions.length - 1]).toBeNull();
   });
 
   it('should update game state', (done) => {
@@ -229,6 +247,44 @@ describe('LobbyService', () => {
 
     expect(lobbyEmissions[lobbyEmissions.length - 1]).toEqual(mockLobby);
     expect(stateEmissions[stateEmissions.length - 1]).toEqual(gamestate);
+  });
+
+  it('should start a multiplayer game and publish lobby and game state', () => {
+    const gamestate: GameState = { phase: 'playing', botGame: false, turnOrder: ['host', 'ann'], currentTurn: 'host' };
+    const mockLobby: Lobby = {
+      lobbyId: 'lobby-1',
+      started: true,
+      users: [
+        { id: 'host', username: 'host', displayName: 'Host', position: 0 },
+        { id: 'ann', username: 'ann', displayName: 'Ann', position: 1 }
+      ],
+      gamestate
+    };
+    const lobbyEmissions: (Lobby | null)[] = [];
+    const stateEmissions: (GameState | null)[] = [];
+    service.getCurrentLobby().subscribe(l => lobbyEmissions.push(l));
+    service.getGameState().subscribe(s => stateEmissions.push(s));
+
+    service.startGame('lobby-1', 'host', ['host', 'ann']).subscribe();
+
+    const req = httpMock.expectOne('/api/lobby/lobby-1/start-game');
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ userId: 'host', playerIds: ['host', 'ann'] });
+    req.flush(mockLobby);
+
+    expect(lobbyEmissions[lobbyEmissions.length - 1]?.started).toBe(true);
+    expect(lobbyEmissions[lobbyEmissions.length - 1]?.users).toEqual(mockLobby.users);
+    expect(stateEmissions[stateEmissions.length - 1]?.turnOrder).toEqual(['host', 'ann']);
+    expect(stateEmissions[stateEmissions.length - 1]?.botGame).toBe(false);
+  });
+
+  it('should start a multiplayer game without a player list', () => {
+    service.startGame('lobby-1', 'host').subscribe();
+
+    const req = httpMock.expectOne('/api/lobby/lobby-1/start-game');
+    expect(req.request.body.userId).toBe('host');
+    expect(req.request.body.playerIds).toBeUndefined();
+    req.flush({ lobbyId: 'lobby-1', users: [], started: true });
   });
 
   it('should save game state', () => {

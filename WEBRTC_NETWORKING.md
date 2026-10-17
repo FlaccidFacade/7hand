@@ -6,6 +6,15 @@ This document explains the WebRTC peer-to-peer networking infrastructure used in
 
 PR #124 introduces WebRTC (Web Real-Time Communication) to enable peer-to-peer connections between players in a lobby. This allows game state to be shared directly between players' browsers without routing through the server, reducing server load and latency.
 
+## Multiplayer Games Without a TURN Server
+
+Human games run peer to peer over STUN only. The backend relays signaling and never sees game traffic.
+
+- **Host authority:** the lobby host (first player) owns the game state. Guests send a move to the host, which validates it with `applyMove` using the verified data-channel peer id and broadcasts the new state. Guests accept state only from the host.
+- **Starting:** the host calls `POST /api/lobby/:lobbyId/start-game` with the ids of players whose peer connection is up (at least 2), then broadcasts `gameStart`. Players that did not connect are not seated.
+- **Signaling rules:** `POST /signal` accepts only `offer`, `answer` and `ice-candidate`, and both sender and recipient must be lobby members. Queues are capped at 100 messages.
+- **Limits:** peers behind symmetric NATs cannot connect without a relay; the host sees them as not connected and they are left out of the game.
+
 ## Current Configuration
 
 ### STUN Servers: ✅ **Yes, We Are Using STUN Servers**

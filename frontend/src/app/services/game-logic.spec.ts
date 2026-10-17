@@ -14,10 +14,13 @@ import {
   acceptBid,
   offerBid,
   withdrawBid,
+  cancelBid,
   declareBid,
   pendingBidder,
   selectContract,
-  startNextHand
+  startNextHand,
+  applyMove,
+  parseMove
 } from './game-logic';
 
 const card = (id: string, suit: string, rank: string): Card => ({ id, suit, rank });
@@ -555,5 +558,183 @@ describe('bid intents', () => {
   it('should not let the current player bid against themselves', () => {
     const state = declareBid(makeState(), 'me', 'diamonds', 'Q');
     expect(pendingBidder(state)).toBeNull();
+  });
+
+  it('should give declared bids deterministic ids', () => {
+    const first = declareBid(makeState(), 'bot-1', 'diamonds', 'Q');
+    const second = declareBid(makeState(), 'bot-1', 'diamonds', 'Q');
+    expect(first.bidIntents?.['bot-1'][0].id).toBe(second.bidIntents?.['bot-1'][0].id);
+  });
+
+  it('should keep bid ids unique when a bid is cancelled and the same face is declared again', () => {
+    let state = declareBid(makeState(), 'bot-1', 'hearts', '2');
+    state = declareBid(state, 'bot-1', 'hearts', '2');
+    const [firstId, secondId] = state.bidIntents!['bot-1'].map(c => c.id);
+    expect(firstId).not.toBe(secondId);
+
+    state = cancelBid(state, 'bot-1', firstId);
+    state = declareBid(state, 'bot-1', 'hearts', '2');
+    const ids = state.bidIntents!['bot-1'].map(c => c.id);
+    expect(new Set(ids).size).toBe(2);
+    expect(ids).toContain(secondId);
+  });
+
+  it('should accept a joker bid but reject faces that are not on a card', () => {
+    expect(declareBid(makeState(), 'me', 'joker', 'JOKER').bidIntents?.['me'][0]).toEqual(
+      jasmine.objectContaining({ suit: 'joker', rank: 'JOKER' })
+    );
+    [['hearts', 'JOKER'], ['joker', 'A'], ['stars', 'A'], ['hearts', '11'], ['constructor', 'A'], ['hearts', '__proto__']].forEach(
+      ([suit, rank]) => expect(() => declareBid(makeState(), 'me', suit, rank)).toThrow()
+    );
+  });
+});
+
+describe('parseMove', () => {
+  it('should accept every move type a player may send', () => {
+    const moves: unknown[] = [
+      { type: 'draw', source: 'deck' },
+      { type: 'draw', source: 'discard' },
+      { type: 'discard', cardId: 'c1' },
+      { type: 'meld', groups: [{ type: 'set', cardIds: ['a', 'b', 'c'] }, { type: 'run', cardIds: ['d', 'e', 'f', 'g'] }] },
+      { type: 'layOff', ownerId: 'bot-1', meldId: 'meld-1', cardIds: ['a'] },
+      { type: 'selectContract', round: 3 },
+      { type: 'declareBid', suit: 'hearts', rank: '10' },
+      { type: 'declareBid', suit: 'joker', rank: 'JOKER' },
+      { type: 'cancelBid', bidId: 'bid-me-hearts-2-1' },
+      { type: 'offerBid' },
+      { type: 'acceptBid' },
+      { type: 'withdrawBid' }
+    ];
+    moves.forEach(move => expect(parseMove(move)).toEqual(move as never));
+  });
+
+  it('should drop properties that are not part of the move', () => {
+    expect(parseMove({ type: 'discard', cardId: 'c1', playerId: 'someone-else', extra: { deep: true } }))
+      .toEqual({ type: 'discard', cardId: 'c1' });
+    expect(parseMove({ type: 'offerBid', playerId: 'someone-else' })).toEqual({ type: 'offerBid' });
+  });
+
+  it('should reject input that is not a known move', () => {
+    [
+      undefined, null, 42, 'draw', [], {}, { type: 5 }, { type: 'nextHand' }, { type: 'startNextHand' },
+      { type: '__proto__' }, { type: 'constructor' }, { fn: 'drawCard', args: ['me', 'deck'] }
+    ].forEach(value => expect(parseMove(value)).withContext(JSON.stringify(value)).toBeNull());
+  });
+
+  it('should reject moves with malformed or oversized fields', () => {
+    const tooLong = 'x'.repeat(129);
+    [
+      { type: 'draw', source: 'hand' },
+      { type: 'draw' },
+      { type: 'discard' },
+      { type: 'discard', cardId: '' },
+      { type: 'discard', cardId: 7 },
+      { type: 'discard', cardId: tooLong },
+      { type: 'meld', groups: [] },
+      { type: 'meld', groups: 'set' },
+      { type: 'meld', groups: [null] },
+      { type: 'meld', groups: [{ type: 'pair', cardIds: ['a', 'b'] }] },
+      { type: 'meld', groups: [{ type: 'set', cardIds: [] }] },
+      { type: 'meld', groups: [{ type: 'set', cardIds: ['a', 3, 'c'] }] },
+      { type: 'meld', groups: Array.from({ length: 13 }, () => ({ type: 'set', cardIds: ['a', 'b', 'c'] })) },
+      { type: 'meld', groups: [{ type: 'set', cardIds: Array.from({ length: 31 }, (_, i) => `c${i}`) }] },
+      { type: 'layOff', ownerId: 'bot-1', meldId: 'meld-1' },
+      { type: 'layOff', ownerId: 'bot-1', meldId: 'meld-1', cardIds: [] },
+      { type: 'layOff', ownerId: 1, meldId: 'meld-1', cardIds: ['a'] },
+      { type: 'selectContract', round: 0 },
+      { type: 'selectContract', round: 8 },
+      { type: 'selectContract', round: 1.5 },
+      { type: 'selectContract', round: '3' },
+      { type: 'declareBid', suit: 'hearts', rank: 'JOKER' },
+      { type: 'declareBid', suit: 'hearts' },
+      { type: 'declareBid', suit: 1, rank: 2 },
+      { type: 'cancelBid' },
+      { type: 'cancelBid', bidId: tooLong }
+    ].forEach(value => expect(parseMove(value)).withContext(JSON.stringify(value).slice(0, 80)).toBeNull());
+  });
+});
+
+describe('applyMove', () => {
+  it('should reject a player who is not at the table', () => {
+    expect(() => applyMove(makeState(), 'stranger', { type: 'draw', source: 'deck' })).toThrowError(/not part of this game/);
+  });
+
+  it('should apply the same rules as the underlying game functions', () => {
+    const drawn = applyMove(makeState(), 'me', { type: 'draw', source: 'deck' });
+    expect(drawn).toEqual(drawCard(makeState(), 'me', 'deck'));
+
+    const thrown = applyMove(drawn, 'me', { type: 'discard', cardId: 'm1' });
+    expect(thrown.currentTurn).toBe('bot-1');
+    expect(thrown.discardPile!.map(c => c.id)).toContain('m1');
+  });
+
+  it('should reject moves made out of turn', () => {
+    expect(() => applyMove(makeState(), 'bot-1', { type: 'draw', source: 'deck' })).toThrow();
+    expect(() => applyMove(makeState({ turnPhase: 'discard' }), 'bot-1', { type: 'discard', cardId: 'b1' })).toThrow();
+  });
+
+  it('should meld and lay off through the same validation as local play', () => {
+    const sevens = [card('7h', 'hearts', '7'), card('7s', 'spades', '7'), card('7d', 'diamonds', '7')];
+    const nines = [card('9h', 'hearts', '9'), card('9s', 'spades', '9'), card('9c', 'clubs', '9')];
+    const state = makeState({
+      handNumber: 1,
+      turnPhase: 'discard',
+      hands: { me: [...sevens, ...nines, card('ks', 'spades', 'K')], 'bot-1': [card('b1', 'spades', '4')] },
+      board: { me: [], 'bot-1': [] },
+      contractMelded: { me: false, 'bot-1': false },
+      selectedContracts: { me: 1, 'bot-1': null },
+      completedContracts: { me: [], 'bot-1': [] },
+      removedContracts: { me: [], 'bot-1': [] }
+    });
+    const melded = applyMove(state, 'me', {
+      type: 'meld',
+      groups: [{ type: 'set', cardIds: ['7h', '7s', '7d'] }, { type: 'set', cardIds: ['9h', '9s', '9c'] }]
+    });
+    expect(melded.contractMelded!['me']).toBeTrue();
+    expect(() => applyMove(melded, 'me', { type: 'meld', groups: [{ type: 'set', cardIds: ['7h', '7s', '7d'] }] })).toThrow();
+
+    const kings = [card('kh', 'hearts', 'K'), card('kd', 'diamonds', 'K'), card('kc', 'clubs', 'K')];
+    const withTable = { ...melded, board: { ...melded.board, 'bot-1': [{ id: 'meld-k', type: 'set' as const, rank: 'K', cards: kings }] } };
+    const laidOff = applyMove(withTable, 'me', { type: 'layOff', ownerId: 'bot-1', meldId: 'meld-k', cardIds: ['ks'] });
+    expect(laidOff.board!['bot-1'][0].cards.length).toBe(4);
+    expect(() => applyMove(withTable, 'me', { type: 'layOff', ownerId: 'nobody', meldId: 'meld-k', cardIds: ['ks'] })).toThrow();
+  });
+
+  it('should let a player choose a contract for themselves only', () => {
+    const state = makeState({ completedContracts: { me: [], 'bot-1': [] }, removedContracts: { me: [], 'bot-1': [] } });
+    const next = applyMove(state, 'bot-1', { type: 'selectContract', round: 4 });
+    expect(next.selectedContracts?.['bot-1']).toBe(4);
+    expect(next.selectedContracts?.['me']).toBeUndefined();
+  });
+
+  describe('bidding', () => {
+    // bot-1 has declared a bid on the face-up queen of diamonds while it is "me"'s turn to draw
+    const biddingState = () => declareBid(makeState(), 'bot-1', 'diamonds', 'Q');
+
+    it('should let only the current player allow a bid', () => {
+      expect(() => applyMove(biddingState(), 'bot-1', { type: 'offerBid' })).toThrowError(/current player/);
+      expect(applyMove(biddingState(), 'me', { type: 'offerBid' }).bidOffer).toEqual({ bidderId: 'bot-1' });
+    });
+
+    it('should let only the bidder accept or withdraw an offered bid', () => {
+      const offered = applyMove(biddingState(), 'me', { type: 'offerBid' });
+      expect(() => applyMove(offered, 'me', { type: 'acceptBid' })).toThrow();
+      expect(() => applyMove(offered, 'me', { type: 'withdrawBid' })).toThrow();
+
+      const accepted = applyMove(offered, 'bot-1', { type: 'acceptBid' });
+      expect(accepted.bidsUsed?.['bot-1']).toBe(1);
+      expect(accepted.bidOffer).toBeUndefined();
+
+      const withdrawn = applyMove(offered, 'bot-1', { type: 'withdrawBid' });
+      expect(withdrawn.bidOffer).toBeUndefined();
+      expect(withdrawn.bidsUsed?.['bot-1'] ?? 0).toBe(0);
+    });
+
+    it('should only cancel the sender\'s own bid', () => {
+      const state = declareBid(biddingState(), 'me', 'hearts', '2');
+      const bidId = state.bidIntents!['bot-1'][0].id;
+      const next = applyMove(state, 'me', { type: 'cancelBid', bidId });
+      expect(next.bidIntents!['bot-1'].length).toBe(1);
+    });
   });
 });

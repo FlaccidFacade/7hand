@@ -9,29 +9,22 @@ import { LobbyService, GameState, Card } from '../../services/lobby.service';
 import { PlayingCardComponent, Suit, Rank } from '../playing-card/playing-card.component';
 import {
   DrawSource,
+  GameMove,
+  applyMove,
   MeldGroup,
   hasMetContract,
-  layOffCards,
   canDiscard,
   canDraw,
-  discardCard,
-  drawCard,
-  acceptBid,
-  offerBid,
-  withdrawBid,
-  cancelBid,
-  declareBid,
   pendingBidder,
   isHandOver,
   playBotStep,
-  playMelds,
-  selectContract,
   startNextHand
 } from '../../services/game-logic';
 import { buildRun, buildSet, contractDifficulty, contractForRound, CONTRACT_ROUNDS, describeContract } from '../../services/melds';
 import { BoardComponent, BoardSpace, MeldTarget } from '../board/board.component';
 import { WebRTCService } from '../../services/webrtc.service';
 import { SignalingService } from '../../services/signaling.service';
+import { GameSyncService } from '../../services/game-sync.service';
 import { Subscription, firstValueFrom, of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 
@@ -118,6 +111,7 @@ export class Lobby implements OnInit, OnDestroy {
     private lobbyService: LobbyService,
     private webrtcService: WebRTCService,
     private signalingService: SignalingService,
+    private gameSync: GameSyncService,
     private host: ElementRef<HTMLElement>,
     private cdr: ChangeDetectorRef
   ) {}
@@ -306,8 +300,7 @@ export class Lobby implements OnInit, OnDestroy {
     }
     try {
       const joker = this.bidSuit === 'joker' || this.bidRank === 'JOKER';
-      this.applyGameState(declareBid(this.gameState, this.currentUserId,
-        joker ? 'joker' : this.bidSuit, joker ? 'JOKER' : this.bidRank));
+      this.play({ type: 'declareBid', suit: joker ? 'joker' : this.bidSuit, rank: joker ? 'JOKER' : this.bidRank });
       this.bidError = null;
     } catch (error) {
       this.bidError = error instanceof Error ? error.message : 'Unable to declare bid';
@@ -316,13 +309,13 @@ export class Lobby implements OnInit, OnDestroy {
 
   cancelMyBid(bid: Card): void {
     if (this.gameState && this.currentUserId) {
-      this.applyGameState(cancelBid(this.gameState, this.currentUserId, bid.id));
+      this.play({ type: 'cancelBid', bidId: bid.id });
     }
   }
 
   allowBid(): void {
     if (this.gameState && this.pendingBidderName) {
-      this.applyGameState(offerBid(this.gameState));
+      this.play({ type: 'offerBid' });
     }
   }
 
@@ -385,13 +378,13 @@ export class Lobby implements OnInit, OnDestroy {
 
   confirmMyBid(): void {
     if (this.gameState && this.amOfferedBid) {
-      this.applyGameState(acceptBid(this.gameState));
+      this.play({ type: 'acceptBid' });
     }
   }
 
   withdrawMyBid(): void {
     if (this.gameState && this.currentUserId && this.amOfferedBid) {
-      this.applyGameState(withdrawBid(this.gameState, this.currentUserId));
+      this.play({ type: 'withdrawBid' });
     }
   }
 
@@ -539,7 +532,7 @@ export class Lobby implements OnInit, OnDestroy {
       return;
     }
     try {
-      this.applyGameState(selectContract(this.gameState, this.currentUserId, roundNumber));
+      this.play({ type: 'selectContract', round: roundNumber });
       this.actionError = null;
     } catch (error) {
       this.actionError = error instanceof Error ? error.message : 'Unable to choose that contract';
@@ -551,7 +544,11 @@ export class Lobby implements OnInit, OnDestroy {
       return;
     }
     try {
-      this.applyGameState(startNextHand(this.gameState));
+      if (this.gameState.botGame) {
+        this.lobbyService.updateGameState(startNextHand(this.gameState));
+      } else {
+        this.gameSync.dealNextHand();
+      }
       this.actionError = null;
     } catch (error) {
       this.actionError = error instanceof Error ? error.message : 'Unable to deal the next hand';
@@ -607,7 +604,7 @@ export class Lobby implements OnInit, OnDestroy {
       return;
     }
     try {
-      this.applyGameState(playMelds(this.gameState, this.currentUserId, this.stagedMelds));
+      this.play({ type: 'meld', groups: this.stagedMelds });
       this.stagedMelds = [];
       this.selectedCardIds = [];
       this.actionError = null;
@@ -621,9 +618,7 @@ export class Lobby implements OnInit, OnDestroy {
       return;
     }
     try {
-      this.applyGameState(
-        layOffCards(this.gameState, this.currentUserId, target.ownerId, target.meldId, this.selectedCardIds)
-      );
+      this.play({ type: 'layOff', ownerId: target.ownerId, meldId: target.meldId, cardIds: this.selectedCardIds });
       this.selectedCardIds = [];
       this.actionError = null;
     } catch (error) {
@@ -649,13 +644,13 @@ export class Lobby implements OnInit, OnDestroy {
         const source = this.selectedSource;
         const from = this.pileElement(source)?.getBoundingClientRect() ?? null;
         const previous = this.myHand.length;
-        this.applyGameState(drawCard(this.gameState, this.currentUserId, source));
+        this.play({ type: 'draw', source });
         const added = this.myHand[this.myHand.length - 1];
         if (added && this.myHand.length > previous) {
           this.animateNewCard(added.id, source, from);
         }
       } else if (this.canThrow) {
-        this.applyGameState(discardCard(this.gameState, this.currentUserId, this.selectedCardIds[0]));
+        this.play({ type: 'discard', cardId: this.selectedCardIds[0] });
         this.saveGameState();
       }
     } catch (error) {
@@ -720,11 +715,15 @@ export class Lobby implements OnInit, OnDestroy {
     }
   }
 
-  private applyGameState(next: GameState): void {
-    this.lobbyService.updateGameState(next);
-    // Bot games stay on this device; with other humans the move is shared with peers
-    if (!next.botGame) {
-      this.webrtcService.broadcast('gameState', next);
+  // Bot games stay on this device; with other humans the host validates and shares every move
+  private play(move: GameMove): void {
+    if (!this.gameState || !this.currentUserId) {
+      return;
+    }
+    if (this.gameState.botGame) {
+      this.lobbyService.updateGameState(applyMove(this.gameState, this.currentUserId, move));
+    } else {
+      this.gameSync.submit(move);
     }
   }
 
@@ -788,7 +787,7 @@ export class Lobby implements OnInit, OnDestroy {
         return;
       }
       try {
-        this.applyGameState(playBotStep(state, bot.id));
+        this.lobbyService.updateGameState(playBotStep(state, bot.id));
       } catch (error) {
         console.error('Bot move failed:', error);
       }
@@ -838,13 +837,11 @@ export class Lobby implements OnInit, OnDestroy {
   private setupEventListeners(): void {
     // Listen for peer joined events
     const peerJoinedSub = this.signalingService.peerJoined$.subscribe((peerId) => {
-      console.log('Peer joined:', peerId);
-      // Peer will be added through lobby service updates
+      this.refreshLobby();
     });
 
     // Listen for peer left events
     const peerLeftSub = this.signalingService.peerLeft$.subscribe((peerId) => {
-      console.log('Peer left:', peerId);
       this.lobbyService.removePlayerFromLobby(peerId);
     });
 
@@ -904,28 +901,36 @@ export class Lobby implements OnInit, OnDestroy {
     }
   }
 
-  private handleP2PMessage(message: any): void {
-    console.log('Received P2P message:', message);
-    
-    // Handle different message types
+  private get hostId(): string | undefined {
+    return this.players[0]?.id;
+  }
+
+  // Only the host's connection is trusted for lobby-level messages
+  private handleP2PMessage(message: { type: string; data: any; from: string }): void {
+    if (message.from !== this.hostId) {
+      return;
+    }
     switch (message.type) {
-      case 'gameState':
-        // Update game state from peer
-        if (message.data) {
-          this.lobbyService.updateGameState(message.data);
-        }
+      case 'gameStart':
+        this.refreshLobby();
+        break;
+      case 'moveRejected':
+        this.actionError = typeof message.data?.message === 'string' ? message.data.message : 'Move rejected';
+        this.cdr.markForCheck();
         break;
       case 'gameClosed':
         // The host closed the game; this lobby no longer exists
         this.cleanup();
         this.router.navigate(['/']);
         break;
-      case 'playerAction':
-        // Handle player action
-        console.log('Player action:', message.data);
-        break;
-      default:
-        console.log('Unknown message type:', message.type);
+    }
+  }
+
+  private refreshLobby(): void {
+    if (this.lobbyId && !this.destroyed) {
+      this.lobbyService.getLobby(this.lobbyId).subscribe({
+        error: (error) => console.error('Error refreshing lobby:', error)
+      });
     }
   }
 
@@ -953,6 +958,7 @@ export class Lobby implements OnInit, OnDestroy {
   }
 
   private closeP2PConnections(): void {
+    this.gameSync.stop();
     this.signalingService.cleanup();
     this.webrtcService.closeAllConnections();
   }
@@ -998,6 +1004,9 @@ export class Lobby implements OnInit, OnDestroy {
         // Bot games are local to the client, so they don't need peer connections
         if (!lobby.gamestate?.botGame) {
           this.setupP2PConnections();
+          if (this.currentUserId && lobby.users[0]) {
+            this.gameSync.start(this.currentUserId, lobby.users[0].id);
+          }
         }
       },
       error: (error) => {
@@ -1035,18 +1044,25 @@ export class Lobby implements OnInit, OnDestroy {
   }
 
   startGame(): void {
-    if (this.isHost && this.players.length >= 2) {
-      console.log('Starting game...');
-      
-      // Broadcast game start to all peers via P2P
-      this.webrtcService.broadcast('gameStart', {
-        players: this.players,
-        timestamp: Date.now()
-      });
-      
-      // Navigate to game or update state
-      // TODO: Implement game start logic
+    if (!this.isHost || !this.lobbyId || !this.currentUserId || this.isStarted) {
+      return;
     }
+    // Only players whose peer connection is up are seated
+    const connected = new Set(this.webrtcService.getConnectedPeers());
+    const playerIds = this.players.filter(p => p.id === this.currentUserId || connected.has(p.id)).map(p => p.id);
+    if (playerIds.length < 2) {
+      this.botGameError = 'Waiting for players to connect';
+      return;
+    }
+    this.botGameError = null;
+    this.lobbyService.startGame(this.lobbyId, this.currentUserId, playerIds).subscribe({
+      next: () => this.webrtcService.broadcast('gameStart', { timestamp: Date.now() }),
+      error: (error) => {
+        console.error('Error starting game:', error);
+        this.botGameError = 'Unable to start game';
+        this.cdr.markForCheck();
+      }
+    });
   }
 
   copyLobbyLink(): void {
@@ -1089,6 +1105,7 @@ export class Lobby implements OnInit, OnDestroy {
         this.lobbyId = lobby.lobbyId;
         this.router.navigate(['/lobby', lobby.lobbyId], { replaceUrl: true });
         this.setupP2PConnections();
+        this.gameSync.start(userId, userId);
         this.cdr.markForCheck();
       },
       error: (error) => {

@@ -24,6 +24,9 @@ const RANK_VALUE: Record<string, number> = {
   '8': 8, '9': 9, '10': 10, J: 11, Q: 12, K: 13
 };
 
+const SUITS = ['hearts', 'diamonds', 'clubs', 'spades'];
+const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+
 export const BIDS_PER_HAND = 3;
 
 /** Spends one of the player's bids for the current hand. */
@@ -37,6 +40,24 @@ export function useBid(state: GameState, playerId: string): GameState {
 
 const sameFace = (a: Card, b: Card) => a.suit === b.suit && a.rank === b.rank;
 
+// A bid names a real card face; jokers are the only cards with the 'joker' suit
+function isBiddableFace(suit: string, rank: string): boolean {
+  if (suit === 'joker' || rank === 'JOKER') {
+    return suit === 'joker' && rank === 'JOKER';
+  }
+  return SUITS.includes(suit) && RANKS.includes(rank);
+}
+
+// Uses the smallest serial not already taken, so ids stay unique after a bid is cancelled and redeclared
+function nextBidId(playerId: string, suit: string, rank: string, intents: Card[]): string {
+  const taken = new Set(intents.map(c => c.id));
+  let serial = 1;
+  while (taken.has(`bid-${playerId}-${suit}-${rank}-${serial}`)) {
+    serial++;
+  }
+  return `bid-${playerId}-${suit}-${rank}-${serial}`;
+}
+
 /** Declares intent to bid on a card face; each player may hold 3 declared bids at once. */
 export function declareBid(state: GameState, playerId: string, suit: string, rank: string): GameState {
   const intents = state.bidIntents?.[playerId] ?? [];
@@ -46,10 +67,13 @@ export function declareBid(state: GameState, playerId: string, suit: string, ran
   if (state.phase !== 'playing') {
     throw new Error('Bids can only be declared during a hand');
   }
+  if (!isBiddableFace(suit, rank)) {
+    throw new Error('Choose a valid card to bid on');
+  }
   if (intents.length >= BIDS_PER_HAND) {
     throw new Error('No bids available');
   }
-  const card: Card = { id: `bid-${playerId}-${intents.length}-${suit}-${rank}-${Date.now()}`, suit, rank };
+  const card: Card = { id: nextBidId(playerId, suit, rank, intents), suit, rank };
   return { ...state, bidIntents: { ...state.bidIntents, [playerId]: [...intents, card] } };
 }
 
@@ -267,12 +291,10 @@ export function startNextHand(state: GameState): GameState {
 }
 
 function createGameDeck(handNumber: number): Card[] {
-  const suits = ['hearts', 'diamonds', 'clubs', 'spades'];
-  const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
   const deck: Card[] = [];
   for (let copy = 0; copy < 2; copy++) {
-    for (const suit of suits) {
-      for (const rank of ranks) {
+    for (const suit of SUITS) {
+      for (const rank of RANKS) {
         deck.push({ id: `hand-${handNumber}-${copy}-${suit}-${rank}`, suit, rank });
       }
     }
@@ -606,4 +628,141 @@ export function playBotStep(state: GameState, botId: string): GameState {
     return drawCard(state, botId, chooseBotSource(state, botId));
   }
   return botPlayCards(state, botId) ?? discardCard(state, botId, chooseBotDiscard(state, botId).id);
+}
+
+/**
+ * A move a player asks the host to make. Only the player's intent travels over the network;
+ * the host validates it against the authoritative state and broadcasts the result.
+ * Dealing the next hand is deliberately absent: only the host ever does that.
+ */
+export type GameMove =
+  | { type: 'draw'; source: DrawSource }
+  | { type: 'discard'; cardId: string }
+  | { type: 'meld'; groups: MeldGroup[] }
+  | { type: 'layOff'; ownerId: string; meldId: string; cardIds: string[] }
+  | { type: 'selectContract'; round: number }
+  | { type: 'declareBid'; suit: string; rank: string }
+  | { type: 'cancelBid'; bidId: string }
+  | { type: 'offerBid' }
+  | { type: 'acceptBid' }
+  | { type: 'withdrawBid' };
+
+const MAX_ID_LENGTH = 128;
+const MAX_MELD_GROUPS = 12;
+const MAX_CARDS_PER_GROUP = 30;
+
+const isId = (value: unknown): value is string =>
+  typeof value === 'string' && value.length > 0 && value.length <= MAX_ID_LENGTH;
+
+const isIdList = (value: unknown): value is string[] =>
+  Array.isArray(value) && value.length > 0 && value.length <= MAX_CARDS_PER_GROUP && value.every(isId);
+
+function parseMeldGroups(value: unknown): MeldGroup[] | null {
+  if (!Array.isArray(value) || value.length === 0 || value.length > MAX_MELD_GROUPS) {
+    return null;
+  }
+  const groups: MeldGroup[] = [];
+  for (const entry of value) {
+    const group = (typeof entry === 'object' && entry !== null ? entry : {}) as Record<string, unknown>;
+    const type = group['type'];
+    const cardIds = group['cardIds'];
+    if ((type !== 'set' && type !== 'run') || !isIdList(cardIds)) {
+      return null;
+    }
+    groups.push({ type, cardIds: [...cardIds] });
+  }
+  return groups;
+}
+
+/**
+ * Validates untrusted network input and returns a clean copy of the move, or null when it is
+ * malformed. Unknown move types and extra properties are dropped.
+ */
+export function parseMove(value: unknown): GameMove | null {
+  if (typeof value !== 'object' || value === null) {
+    return null;
+  }
+  const raw = value as Record<string, unknown>;
+  switch (raw['type']) {
+    case 'draw': {
+      const source = raw['source'];
+      return source === 'deck' || source === 'discard' ? { type: 'draw', source } : null;
+    }
+    case 'discard': {
+      const cardId = raw['cardId'];
+      return isId(cardId) ? { type: 'discard', cardId } : null;
+    }
+    case 'meld': {
+      const groups = parseMeldGroups(raw['groups']);
+      return groups ? { type: 'meld', groups } : null;
+    }
+    case 'layOff': {
+      const { ownerId, meldId, cardIds } = raw;
+      return isId(ownerId) && isId(meldId) && isIdList(cardIds)
+        ? { type: 'layOff', ownerId, meldId, cardIds: [...cardIds] }
+        : null;
+    }
+    case 'selectContract': {
+      const round = raw['round'];
+      return typeof round === 'number' && CONTRACT_ROUNDS.includes(round) ? { type: 'selectContract', round } : null;
+    }
+    case 'declareBid': {
+      const { suit, rank } = raw;
+      return typeof suit === 'string' && typeof rank === 'string' && isBiddableFace(suit, rank)
+        ? { type: 'declareBid', suit, rank }
+        : null;
+    }
+    case 'cancelBid': {
+      const bidId = raw['bidId'];
+      return isId(bidId) ? { type: 'cancelBid', bidId } : null;
+    }
+    case 'offerBid':
+    case 'acceptBid':
+    case 'withdrawBid':
+      return { type: raw['type'] };
+    default:
+      return null;
+  }
+}
+
+/**
+ * Applies a move on behalf of `playerId` and returns the next state, or throws when the move is
+ * not allowed. The caller must take `playerId` from the verified connection, never from the payload.
+ */
+export function applyMove(state: GameState, playerId: string, move: GameMove): GameState {
+  const turnOrder = state.turnOrder ?? [];
+  if (!turnOrder.includes(playerId)) {
+    throw new Error('You are not part of this game');
+  }
+  switch (move.type) {
+    case 'draw':
+      return drawCard(state, playerId, move.source);
+    case 'discard':
+      return discardCard(state, playerId, move.cardId);
+    case 'meld':
+      return playMelds(state, playerId, move.groups);
+    case 'layOff':
+      if (!turnOrder.includes(move.ownerId)) {
+        throw new Error('That meld is not on the table');
+      }
+      return layOffCards(state, playerId, move.ownerId, move.meldId, move.cardIds);
+    case 'selectContract':
+      return selectContract(state, playerId, move.round);
+    case 'declareBid':
+      return declareBid(state, playerId, move.suit, move.rank);
+    case 'cancelBid':
+      return cancelBid(state, playerId, move.bidId);
+    case 'offerBid':
+      if (state.currentTurn !== playerId) {
+        throw new Error('Only the current player can allow a bid');
+      }
+      return offerBid(state);
+    case 'acceptBid':
+      if (state.bidOffer?.bidderId !== playerId) {
+        throw new Error('No bid offer for this player');
+      }
+      return acceptBid(state);
+    case 'withdrawBid':
+      return withdrawBid(state, playerId);
+  }
 }

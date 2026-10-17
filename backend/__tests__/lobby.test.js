@@ -100,6 +100,70 @@ describe('Lobby bot game', () => {
   });
 });
 
+describe('Lobby multiplayer game', () => {
+  const lobbyOf = (...ids) => {
+    const lobby = new Lobby({ id: ids[0], username: ids[0], displayName: ids[0] });
+    ids.slice(1).forEach(id => lobby.addUser({ id, username: id, displayName: id }));
+    return lobby;
+  };
+
+  it('should seat everyone, deal cards and start with the host to play first', () => {
+    const lobby = lobbyOf('host', 'ann', 'bo');
+    lobby.startGame();
+    expect(lobby.started).toBe(true);
+    expect(lobby.users.map(u => u.position)).toEqual([0, 1, 2]);
+    expect(lobby.gamestate.turnOrder).toEqual(['host', 'ann', 'bo']);
+    expect(lobby.gamestate.currentTurn).toBe('host');
+    expect(Object.values(lobby.gamestate.hands).every(hand => hand.length === 11)).toBe(true);
+  });
+
+  it('should not flag the game as a bot game or add bots', () => {
+    const lobby = lobbyOf('host', 'ann');
+    lobby.startGame();
+    expect(lobby.gamestate.botGame).toBe(false);
+    expect(lobby.users.some(u => u.isBot)).toBe(false);
+    expect(lobby.users.length).toBe(2);
+  });
+
+  it('should start every player on a zero score', () => {
+    const lobby = lobbyOf('host', 'ann');
+    lobby.startGame();
+    expect(lobby.users.every(u => u.gameScore === 0)).toBe(true);
+  });
+
+  it('should leave out players who are not on the list but always keep the host', () => {
+    const lobby = lobbyOf('host', 'ann', 'bo', 'cy');
+    lobby.startGame(['cy', 'ann']);
+    expect(lobby.users.map(u => u.id)).toEqual(['host', 'ann', 'cy']);
+    expect(Object.keys(lobby.gamestate.hands)).toEqual(['host', 'ann', 'cy']);
+  });
+
+  it('should ignore listed ids that are not in the lobby', () => {
+    const lobby = lobbyOf('host', 'ann');
+    expect(lobby.seatedPlayers(['ghost']).map(u => u.id)).toEqual(['host']);
+    expect(lobby.seatedPlayers(['ghost', 'ann']).map(u => u.id)).toEqual(['host', 'ann']);
+  });
+
+  it('should need at least two players', () => {
+    expect(() => lobbyOf('host').startGame()).toThrow('At least two players are needed');
+    expect(() => lobbyOf('host', 'ann').startGame([])).toThrow('At least two players are needed');
+  });
+
+  it('should leave the lobby untouched when it cannot start', () => {
+    const lobby = lobbyOf('host', 'ann');
+    expect(() => lobby.startGame([])).toThrow();
+    expect(lobby.started).toBe(false);
+    expect(lobby.users.length).toBe(2);
+    expect(lobby.gamestate).toBeNull();
+  });
+
+  it('should not start twice', () => {
+    const lobby = lobbyOf('host', 'ann');
+    lobby.startGame();
+    expect(() => lobby.startGame()).toThrow('Game already started');
+  });
+});
+
 describe('loadLobbyFromDb', () => {
   it('should return null for codes that are not 6 valid characters without querying the database', async () => {
     await expect(loadLobbyFromDb('main')).resolves.toBeNull();

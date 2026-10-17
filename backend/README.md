@@ -182,6 +182,8 @@ For detailed user documentation, see [USER_DOCUMENTATION.md](./USER_DOCUMENTATIO
 
 A lobby is also created automatically on every successful login (`POST /api/auth/login` returns it as `lobby`).
 
+**Multiplayer:** `POST /api/lobby/:lobbyId/start-game` (host only, body `{ userId, playerIds? }`) seats at least 2 humans and deals; it returns `409` if already started or too few players. `join` returns `409` for newcomers once started or when full. `POST /signal` accepts only `offer`, `answer` and `ice-candidate` between lobby members.
+
 **Lobby codes:** `lobbyId` is a temporary 6-character code (letters and digits, no `0/O/1/I`, case-insensitive), not the lobby's internal UUID. The code stays valid while the lobby is in use and expires after 30 minutes without activity (create, join, leave, lookups, game-state saves and signaling polls all count). Expired codes return `404`, and expired lobbies are removed from memory and the database every 5 minutes.
 
 #### Join Lobby

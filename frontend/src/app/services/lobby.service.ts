@@ -124,6 +124,16 @@ export class LobbyService {
   }
 
   /**
+   * Start a game between the people in the lobby (host only). Players left off the
+   * optional list, such as those who could not connect to the host, are not seated.
+   */
+  startGame(lobbyId: string, userId: string, playerIds?: string[]): Observable<Lobby> {
+    return this.http.post<Lobby>(`/api/lobby/${lobbyId}/start-game`, { userId, playerIds }).pipe(
+      tap(lobby => this.applyLobby(lobby))
+    );
+  }
+
+  /**
    * Persist the current game state on the server (periodic save)
    */
   saveGameState(lobbyId: string, userId: string, gamestate: GameState): Observable<any> {
@@ -135,7 +145,7 @@ export class LobbyService {
    */
   leaveLobby(lobbyId: string, userId: string): Observable<any> {
     return this.http.post(`/api/lobby/${lobbyId}/leave`, { userId }).pipe(
-      tap(() => this.currentLobby$.next(null))
+      tap(() => this.clearLobby())
     );
   }
 
@@ -144,7 +154,7 @@ export class LobbyService {
    */
   deleteLobby(lobbyId: string): Observable<any> {
     return this.http.delete(`/api/lobby/${lobbyId}`).pipe(
-      tap(() => this.currentLobby$.next(null))
+      tap(() => this.clearLobby())
     );
   }
 

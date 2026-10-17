@@ -6,6 +6,7 @@ const { getPool } = require('./db');
 const { dealGame } = require('./game');
 
 const MAX_PLAYERS = 6;
+const MIN_PLAYERS = 2;
 
 // Public lobby codes replace the internal UUID in URLs and API responses.
 // The alphabet skips look-alike characters (0/O, 1/I).
@@ -71,6 +72,33 @@ class Lobby {
       user.position = index;
     });
     this.gamestate = { ...dealGame(this.users), botGame: true };
+    this.syncScores();
+    this.started = true;
+    this.touch();
+  }
+
+  // The players who would be seated: the host always, plus those listed (everyone when no list is given)
+  seatedPlayers(playerIds) {
+    return this.humanUsers.filter(
+      (user, index) => index === 0 || !Array.isArray(playerIds) || playerIds.includes(user.id)
+    );
+  }
+
+  // Seats the players who are present, deals the cards and marks the lobby started.
+  // Players left off the list are dropped from the lobby.
+  startGame(playerIds) {
+    if (this.started) {
+      throw new Error('Game already started');
+    }
+    const seated = this.seatedPlayers(playerIds);
+    if (seated.length < MIN_PLAYERS) {
+      throw new Error('At least two players are needed');
+    }
+    this.users = seated;
+    this.users.forEach((user, index) => {
+      user.position = index;
+    });
+    this.gamestate = { ...dealGame(this.users), botGame: false };
     this.syncScores();
     this.started = true;
     this.touch();
@@ -236,9 +264,11 @@ async function cleanupInactiveLobbies(minutes = CODE_TTL_MINUTES) {
 
 module.exports = {
   MAX_PLAYERS,
+  MIN_PLAYERS,
   CODE_LENGTH,
   CODE_TTL_MINUTES,
   generateLobbyCode,
+  normalizeLobbyCode,
   Lobby,
   LobbyManager,
   serializeLobby,
